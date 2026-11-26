@@ -11,10 +11,10 @@ if (!email || !motDePasse) {
 const hash = await bcrypt.hash(motDePasse, 10);
 
 await pool.query(
-  `INSERT INTO utilisateurs (email, mot_de_passe_hash)
-   VALUES ($1, $2)
-   ON CONFLICT (email) DO UPDATE SET mot_de_passe_hash = EXCLUDED.mot_de_passe_hash`,
-  [email, hash]
+  `INSERT INTO utilisateurs (email, nom, mot_de_passe_hash, role)
+   VALUES ($1, 'Administrateur', $2, 'admin')
+   ON CONFLICT (email) DO UPDATE SET mot_de_passe_hash = EXCLUDED.mot_de_passe_hash, role = 'admin'`,
+  [email.trim().toLowerCase(), hash]
 );
 
 console.log(`Administrateur enregistré : ${email}`);

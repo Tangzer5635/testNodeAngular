@@ -20,9 +20,19 @@ CREATE TABLE IF NOT EXISTS stocks (
     PRIMARY KEY (vetement_id, taille)
 );
 
+CREATE TABLE IF NOT EXISTS utilisateurs (
+    id                INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    email             TEXT NOT NULL UNIQUE,
+    nom               TEXT,
+    mot_de_passe_hash TEXT NOT NULL,
+    role              TEXT NOT NULL DEFAULT 'client' CHECK (role IN ('admin', 'client')),
+    cree_le           TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
 CREATE TABLE IF NOT EXISTS commandes (
-    id         INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    nom_client TEXT NOT NULL,
+    id             INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    utilisateur_id INT REFERENCES utilisateurs (id) ON DELETE SET NULL,
+    nom_client     TEXT NOT NULL,
     email      TEXT NOT NULL,
     adresse    TEXT NOT NULL,
     total      NUMERIC(10, 2) NOT NULL DEFAULT 0,
@@ -38,12 +48,6 @@ CREATE TABLE IF NOT EXISTS lignes_commande (
     taille        TEXT NOT NULL,
     prix_unitaire NUMERIC(10, 2) NOT NULL,
     quantite      INT NOT NULL CHECK (quantite > 0)
-);
-
-CREATE TABLE IF NOT EXISTS utilisateurs (
-    id       INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    email    TEXT NOT NULL UNIQUE,
-    mot_de_passe_hash TEXT NOT NULL
 );
 
 INSERT INTO categories (nom) VALUES

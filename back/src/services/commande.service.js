@@ -56,8 +56,10 @@ const validerLignes = (lignes) => {
   return [...regroupees.values()].sort((a, b) => a.vetementId - b.vetementId || a.taille.localeCompare(b.taille));
 };
 
-export const passerCommande = async (data) => {
-  const client = validerClient(data?.client);
+export const passerCommande = async (data, utilisateur) => {
+  const client = validerClient(
+    utilisateur ? { ...data?.client, email: utilisateur.email } : data?.client
+  );
   const lignes = validerLignes(data?.lignes);
 
   return transaction(async (db) => {
@@ -77,9 +79,11 @@ export const passerCommande = async (data) => {
       await commandeRepository.retirerDuStock(db, ligne.vetementId, ligne.taille, ligne.quantite);
       lignesCompletes.push({ ...ligne, nom: stock.nom, prix: stock.prix });
     }
-    return commandeRepository.create(db, client, lignesCompletes);
+    return commandeRepository.create(db, client, lignesCompletes, utilisateur?.sub ?? null);
   });
 };
+
+export const getCommandesDe = async (utilisateurId) => commandeRepository.findAll({ utilisateurId });
 
 export const getCommandes = async ({ statut } = {}) => {
   if (statut !== undefined && !Object.hasOwn(TRANSITIONS, statut)) {

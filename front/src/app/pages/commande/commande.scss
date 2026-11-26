@@ -164,3 +164,23 @@ form .bouton {
     order: -1;
   }
 }
+
+.compte {
+  margin: -0.5rem 0 1.5rem;
+  color: v.$gris-texte;
+  font-size: 0.9375rem;
+
+  a {
+    color: v.$lien;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+input:disabled {
+  background-color: v.$gris-fond;
+  color: v.$gris-texte;
+}

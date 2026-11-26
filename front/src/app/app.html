@@ -8,8 +8,13 @@
         <span class="badge">{{ panier.nombreArticles() }}</span>
       }
     </a>
-    @if (auth.estConnecte()) {
+    @if (auth.estAdmin()) {
       <a routerLink="/admin" routerLinkActive="actif">Administration</a>
+    }
+    @if (auth.estClient()) {
+      <a routerLink="/mon-compte" routerLinkActive="actif">Mon compte</a>
+    }
+    @if (auth.estConnecte()) {
       <button type="button" (click)="seDeconnecter()">Déconnexion</button>
     } @else {
       <a routerLink="/connexion" routerLinkActive="actif">Connexion</a>

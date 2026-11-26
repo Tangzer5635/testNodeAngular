@@ -18,7 +18,8 @@ after(() => {
   serveur.close();
 });
 
-const jetonValide = () => jwt.sign({ sub: 1, email: 'admin@test.fr' }, process.env.JWT_SECRET, { expiresIn: '1h' });
+const jetonDe = (role) => jwt.sign({ sub: 1, email: `${role}@test.fr`, role }, process.env.JWT_SECRET, { expiresIn: '1h' });
+const jetonValide = () => jetonDe('admin');
 
 test('une route inconnue renvoie 404 en JSON', async () => {
   const reponse = await fetch(`${url}/api/inconnue`);
@@ -102,6 +103,82 @@ test('des tailles sans stock (ancien format) sont refusées (400)', async () => 
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${jetonValide()}` },
     body: JSON.stringify({ nom: 'Test', prix: 10, tailles: ['S', 'M'], categorie: 'vestes' }),
   });
+  assert.equal(reponse.status, 400);
+});
+
+test('un client ne peut pas créer de vêtement (403)', async () => {
+  const reponse = await fetch(`${url}/api/vetements`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${jetonDe('client')}` },
+    body: '{}',
+  });
+  assert.equal(reponse.status, 403);
+});
+
+test('un client ne peut pas supprimer de vêtement (403)', async () => {
+  const reponse = await fetch(`${url}/api/vetements/1`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${jetonDe('client')}` },
+  });
+  assert.equal(reponse.status, 403);
+});
+
+test('un client ne peut pas envoyer d\'image (403)', async () => {
+  const reponse = await fetch(`${url}/api/images`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${jetonDe('client')}` },
+  });
+  assert.equal(reponse.status, 403);
+});
+
+test('un ancien jeton sans rôle n\'a pas les droits admin (403)', async () => {
+  const ancien = jwt.sign({ sub: 1, email: 'admin@test.fr' }, process.env.JWT_SECRET, { expiresIn: '1h' });
+  const reponse = await fetch(`${url}/api/commandes`, { headers: { Authorization: `Bearer ${ancien}` } });
+  assert.equal(reponse.status, 403);
+});
+
+test('un client ne voit pas la liste de toutes les commandes (403)', async () => {
+  const reponse = await fetch(`${url}/api/commandes`, { headers: { Authorization: `Bearer ${jetonDe('client')}` } });
+  assert.equal(reponse.status, 403);
+});
+
+test('mes commandes sans être connecté renvoie 401', async () => {
+  const reponse = await fetch(`${url}/api/commandes/miennes`);
+  assert.equal(reponse.status, 401);
+});
+
+test('passer commande avec un jeton invalide renvoie 401', async () => {
+  const reponse = await fetch(`${url}/api/commandes`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer pas.un.jeton' },
+    body: '{}',
+  });
+  assert.equal(reponse.status, 401);
+});
+
+const inscrire = (corps) => fetch(`${url}/api/auth/inscription`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify(corps),
+});
+
+test('inscription : nom manquant refusé (400)', async () => {
+  const reponse = await inscrire({ email: 'a@b.fr', motDePasse: 'motdepasse1' });
+  assert.equal(reponse.status, 400);
+});
+
+test('inscription : email invalide refusé (400)', async () => {
+  const reponse = await inscrire({ nom: 'Léa', email: 'lea', motDePasse: 'motdepasse1' });
+  assert.equal(reponse.status, 400);
+});
+
+test('inscription : mot de passe trop court refusé (400)', async () => {
+  const reponse = await inscrire({ nom: 'Léa', email: 'lea@b.fr', motDePasse: 'abc1' });
+  assert.equal(reponse.status, 400);
+});
+
+test('inscription : mot de passe sans chiffre refusé (400)', async () => {
+  const reponse = await inscrire({ nom: 'Léa', email: 'lea@b.fr', motDePasse: 'motdepasse' });
   assert.equal(reponse.status, 400);
 });
 

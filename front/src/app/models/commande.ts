@@ -16,6 +16,7 @@ export interface LigneCommande {
 
 export interface Commande {
   id: number;
+  utilisateurId: number | null;
   nomClient: string;
   email: string;
   adresse: string;

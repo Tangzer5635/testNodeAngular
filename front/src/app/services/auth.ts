@@ -1,15 +1,39 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { Observable, tap } from 'rxjs';
+import { map, Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 
 const CLE_JETON = 'jeton';
+const PAGES_PRIVEES = ['/admin', '/mon-compte'];
 
-const lireExpiration = (jeton: string): number | null => {
+export type Role = 'admin' | 'client';
+
+export interface UtilisateurConnecte {
+  id: number;
+  email: string;
+  nom: string;
+  role: Role;
+}
+
+interface ContenuJeton {
+  sub: number;
+  email: string;
+  nom?: string;
+  role: Role;
+  exp: number;
+}
+
+const lireContenu = (jeton: string): ContenuJeton | null => {
   try {
-    const contenu = JSON.parse(atob(jeton.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
-    return typeof contenu.exp === 'number' ? contenu.exp * 1000 : null;
+    const base64 = jeton.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+    const octets = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+    const contenu = JSON.parse(new TextDecoder().decode(octets));
+    const valide =
+      typeof contenu.exp === 'number' &&
+      contenu.exp * 1000 > Date.now() &&
+      (contenu.role === 'admin' || contenu.role === 'client');
+    return valide ? contenu : null;
   } catch {
     return null;
   }
@@ -21,23 +45,42 @@ const lireExpiration = (jeton: string): number | null => {
 export class AuthService {
   private http = inject(HttpClient);
   private router = inject(Router);
-  private url = `${environment.apiUrl}/auth/login`;
+  private url = `${environment.apiUrl}/auth`;
   private minuteur?: ReturnType<typeof setTimeout>;
 
   readonly jeton = signal<string | null>(null);
-  readonly estConnecte = computed(() => this.jeton() !== null);
+
+  readonly utilisateur = computed<UtilisateurConnecte | null>(() => {
+    const jeton = this.jeton();
+    const contenu = jeton ? lireContenu(jeton) : null;
+    return contenu
+      ? { id: contenu.sub, email: contenu.email, nom: contenu.nom ?? '', role: contenu.role }
+      : null;
+  });
+
+  readonly estConnecte = computed(() => this.utilisateur() !== null);
+  readonly estAdmin = computed(() => this.utilisateur()?.role === 'admin');
+  readonly estClient = computed(() => this.utilisateur()?.role === 'client');
 
   constructor() {
     const jeton = localStorage.getItem(CLE_JETON);
-    if (jeton) {
+    if (jeton && lireContenu(jeton)) {
       this.enregistrer(jeton);
+    } else {
+      localStorage.removeItem(CLE_JETON);
     }
   }
 
-  connexion(email: string, motDePasse: string): Observable<{ token: string }> {
-    return this.http.post<{ token: string }>(this.url, { email, motDePasse }).pipe(
-      tap(reponse => this.enregistrer(reponse.token)),
-    );
+  connexion(email: string, motDePasse: string): Observable<UtilisateurConnecte> {
+    return this.http
+      .post<{ token: string }>(`${this.url}/login`, { email, motDePasse })
+      .pipe(map(reponse => this.enregistrer(reponse.token)));
+  }
+
+  inscription(nom: string, email: string, motDePasse: string): Observable<UtilisateurConnecte> {
+    return this.http
+      .post<{ token: string }>(`${this.url}/inscription`, { nom, email, motDePasse })
+      .pipe(map(reponse => this.enregistrer(reponse.token)));
   }
 
   deconnexion(): void {
@@ -46,11 +89,11 @@ export class AuthService {
     this.jeton.set(null);
   }
 
-  private enregistrer(jeton: string): void {
-    const expiration = lireExpiration(jeton);
-    if (expiration === null || expiration <= Date.now()) {
+  private enregistrer(jeton: string): UtilisateurConnecte {
+    const contenu = lireContenu(jeton);
+    if (!contenu) {
       this.deconnexion();
-      return;
+      throw new Error('Jeton invalide');
     }
     localStorage.setItem(CLE_JETON, jeton);
     this.jeton.set(jeton);
@@ -58,9 +101,12 @@ export class AuthService {
     clearTimeout(this.minuteur);
     this.minuteur = setTimeout(() => {
       this.deconnexion();
-      if (this.router.url.startsWith('/admin')) {
-        this.router.navigate(['/connexion'], { queryParams: { retour: this.router.url } });
+      const url = this.router.url;
+      if (PAGES_PRIVEES.some(page => url.startsWith(page))) {
+        this.router.navigate(['/connexion'], { queryParams: { retour: url } });
       }
-    }, expiration - Date.now());
+    }, contenu.exp * 1000 - Date.now());
+
+    return this.utilisateur()!;
   }
 }

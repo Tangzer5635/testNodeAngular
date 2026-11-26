@@ -1,55 +1,78 @@
 import { TestBed } from '@angular/core/testing';
-import { provideRouter, Router, UrlTree, ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
+import { ActivatedRouteSnapshot, provideRouter, Router, RouterStateSnapshot, UrlTree } from '@angular/router';
 import { provideHttpClient } from '@angular/common/http';
-import { authGuard, inviteGuard } from './auth.guard';
+import { adminGuard, clientGuard, inviteGuard } from './auth.guard';
+import { jetonDe } from '../testing/jetons';
 
-const fauxJeton = (expDansSecondes: number) => {
-  const payload = btoa(JSON.stringify({ sub: 1, exp: Math.floor(Date.now() / 1000) + expDansSecondes }));
-  return `entete.${payload}.signature`;
+type Guard = typeof adminGuard;
+
+const lancer = (guard: Guard, url = '/admin') =>
+  TestBed.runInInjectionContext(() => guard({} as ActivatedRouteSnapshot, { url } as RouterStateSnapshot));
+
+const adresse = (resultat: unknown) => TestBed.inject(Router).serializeUrl(resultat as UrlTree);
+
+const connecter = (role?: 'admin' | 'client') => {
+  if (role) {
+    localStorage.setItem('jeton', jetonDe(role));
+  }
+  TestBed.configureTestingModule({ providers: [provideRouter([]), provideHttpClient()] });
 };
 
-const lancer = (guard: typeof authGuard, url = '/admin') =>
-  TestBed.runInInjectionContext(() =>
-    guard({} as ActivatedRouteSnapshot, { url } as RouterStateSnapshot)
-  );
-
-const configurer = () =>
-  TestBed.configureTestingModule({ providers: [provideRouter([]), provideHttpClient()] });
-
-describe('Guards de connexion', () => {
+describe('Guards', () => {
   beforeEach(() => {
     localStorage.clear();
     TestBed.resetTestingModule();
   });
 
-  it('sans jeton : /admin renvoie vers /connexion en gardant la page demandée', () => {
-    configurer();
-    const resultat = lancer(authGuard, '/admin/3') as UrlTree;
-    expect(TestBed.inject(Router).serializeUrl(resultat)).toBe('/connexion?retour=%2Fadmin%2F3');
+  describe('adminGuard', () => {
+    it('visiteur : renvoie vers la connexion en gardant la page demandée', () => {
+      connecter();
+      expect(adresse(lancer(adminGuard, '/admin/3'))).toBe('/connexion?retour=%2Fadmin%2F3');
+    });
+
+    it('client : renvoie au catalogue', () => {
+      connecter('client');
+      expect(adresse(lancer(adminGuard))).toBe('/');
+    });
+
+    it('admin : accès autorisé', () => {
+      connecter('admin');
+      expect(lancer(adminGuard)).toBe(true);
+    });
   });
 
-  it('avec un jeton valide : /admin est accessible', () => {
-    localStorage.setItem('jeton', fauxJeton(3600));
-    configurer();
-    expect(lancer(authGuard)).toBe(true);
+  describe('clientGuard', () => {
+    it('visiteur : renvoie vers la connexion', () => {
+      connecter();
+      expect(adresse(lancer(clientGuard, '/mon-compte'))).toBe('/connexion?retour=%2Fmon-compte');
+    });
+
+    it('client : accès autorisé', () => {
+      connecter('client');
+      expect(lancer(clientGuard, '/mon-compte')).toBe(true);
+    });
   });
 
-  it('avec un jeton expiré : /admin est refusé et le jeton est supprimé', () => {
-    localStorage.setItem('jeton', fauxJeton(-60));
-    configurer();
-    expect(lancer(authGuard)).toBeInstanceOf(UrlTree);
-    expect(localStorage.getItem('jeton')).toBeNull();
-  });
+  describe('inviteGuard', () => {
+    it('visiteur : la page de connexion est accessible', () => {
+      connecter();
+      expect(lancer(inviteGuard, '/connexion')).toBe(true);
+    });
 
-  it('déjà connecté : /connexion renvoie vers /admin', () => {
-    localStorage.setItem('jeton', fauxJeton(3600));
-    configurer();
-    const resultat = lancer(inviteGuard) as UrlTree;
-    expect(TestBed.inject(Router).serializeUrl(resultat)).toBe('/admin');
-  });
+    it('client déjà connecté : renvoie vers son compte', () => {
+      connecter('client');
+      expect(adresse(lancer(inviteGuard, '/connexion'))).toBe('/mon-compte');
+    });
 
-  it('pas connecté : /connexion est accessible', () => {
-    configurer();
-    expect(lancer(inviteGuard)).toBe(true);
+    it('admin déjà connecté : renvoie vers l\'administration', () => {
+      connecter('admin');
+      expect(adresse(lancer(inviteGuard, '/connexion'))).toBe('/admin');
+    });
+
+    it('un jeton expiré compte comme un visiteur', () => {
+      localStorage.setItem('jeton', jetonDe('admin', { dansSecondes: -10 }));
+      TestBed.configureTestingModule({ providers: [provideRouter([]), provideHttpClient()] });
+      expect(lancer(inviteGuard, '/connexion')).toBe(true);
+    });
   });
 });

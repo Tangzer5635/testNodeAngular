@@ -2,7 +2,11 @@
   <div class="carte merci">
     <h1>Merci {{ c.nom }} !</h1>
     <p>Ta commande <strong>n°{{ c.id }}</strong> de <strong>{{ c.total | currency:'EUR' }}</strong> est bien enregistrée.</p>
-    <a routerLink="/" class="bouton">Continuer mes achats</a>
+    @if (auth.estConnecte()) {
+      <a routerLink="/mon-compte" class="bouton">Suivre mes commandes</a>
+    } @else {
+      <a routerLink="/" class="bouton">Continuer mes achats</a>
+    }
   </div>
 } @else if (panier.lignes().length === 0) {
   <div class="carte">
@@ -23,6 +27,12 @@
   <div class="colonnes">
     <form class="carte" [formGroup]="commandeForm" (ngSubmit)="commander()">
       <h2>Livraison</h2>
+      @if (!auth.estConnecte()) {
+        <p class="compte">
+          Tu as un compte ?
+          <a routerLink="/connexion" [queryParams]="{ retour: '/commande' }">Se connecter</a>
+        </p>
+      }
 
       <label>
         Nom et prénom

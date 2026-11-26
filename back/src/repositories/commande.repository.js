@@ -1,7 +1,7 @@
 import pool from '../config/db.js';
 
 const SELECT_COMMANDES = `
-  SELECT c.id, c.nom_client AS "nomClient", c.email, c.adresse, c.total::float AS total, c.statut,
+  SELECT c.id, c.utilisateur_id AS "utilisateurId", c.nom_client AS "nomClient", c.email, c.adresse, c.total::float AS total, c.statut,
     c.cree_le AS "creeLe",
     COALESCE(
       json_agg(json_build_object(
@@ -13,12 +13,19 @@ const SELECT_COMMANDES = `
   FROM commandes c
   LEFT JOIN lignes_commande l ON l.commande_id = c.id`;
 
-export const findAll = async ({ statut } = {}) => {
-  const where = statut ? 'WHERE c.statut = $1' : '';
-  const result = await pool.query(
-    `${SELECT_COMMANDES} ${where} GROUP BY c.id ORDER BY c.id DESC`,
-    statut ? [statut] : []
-  );
+export const findAll = async ({ statut, utilisateurId } = {}) => {
+  const conditions = [];
+  const valeurs = [];
+  if (statut) {
+    valeurs.push(statut);
+    conditions.push(`c.statut = $${valeurs.length}`);
+  }
+  if (utilisateurId) {
+    valeurs.push(utilisateurId);
+    conditions.push(`c.utilisateur_id = $${valeurs.length}`);
+  }
+  const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+  const result = await pool.query(`${SELECT_COMMANDES} ${where} GROUP BY c.id ORDER BY c.id DESC`, valeurs);
   return result.rows;
 };
 
@@ -44,10 +51,10 @@ export const retirerDuStock = (db, vetementId, taille, quantite) =>
     [vetementId, taille, quantite]
   );
 
-export const create = async (db, client, lignes) => {
+export const create = async (db, client, lignes, utilisateurId) => {
   const commande = await db.query(
-    'INSERT INTO commandes (nom_client, email, adresse) VALUES ($1, $2, $3) RETURNING id',
-    [client.nom, client.email, client.adresse]
+    'INSERT INTO commandes (utilisateur_id, nom_client, email, adresse) VALUES ($1, $2, $3, $4) RETURNING id',
+    [utilisateurId, client.nom, client.email, client.adresse]
   );
   const id = commande.rows[0].id;
 

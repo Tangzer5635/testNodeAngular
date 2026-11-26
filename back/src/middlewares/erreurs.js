@@ -2,6 +2,7 @@ import { ValidationError } from '../errors/ValidationError.js';
 import { NotFoundError } from '../errors/NotFoundError.js';
 import { UnauthorizedError } from '../errors/UnauthorizedError.js';
 import { ConflictError } from '../errors/ConflictError.js';
+import { ForbiddenError } from '../errors/ForbiddenError.js';
 import multer from 'multer';
 
 export const routeIntrouvable = (req, res) => {
@@ -21,6 +22,9 @@ export const gestionnaireErreurs = (error, req, res, next) => {
   }
   if (error instanceof UnauthorizedError) {
     return res.status(401).json({ message: error.message });
+  }
+  if (error instanceof ForbiddenError) {
+    return res.status(403).json({ message: error.message });
   }
   if (error instanceof NotFoundError) {
     return res.status(404).json({ message: error.message });

@@ -1,0 +1,48 @@
+<h1>Créer un compte</h1>
+
+@if (erreur()) {
+  <p class="erreur">{{ erreur() }}</p>
+}
+
+<form [formGroup]="inscriptionForm" (ngSubmit)="creerCompte()">
+  <label>
+    Nom et prénom
+    <input type="text" formControlName="nom" autocomplete="name" />
+  </label>
+  @if (inscriptionForm.controls.nom.invalid && inscriptionForm.controls.nom.touched) {
+    <small>Indique ton nom (2 caractères minimum).</small>
+  }
+
+  <label>
+    Email
+    <input type="email" formControlName="email" autocomplete="email" />
+  </label>
+  @if (inscriptionForm.controls.email.invalid && inscriptionForm.controls.email.touched) {
+    <small>Saisis une adresse email valide.</small>
+  }
+
+  <label>
+    Mot de passe
+    <input type="password" formControlName="motDePasse" autocomplete="new-password" />
+  </label>
+  @if (inscriptionForm.controls.motDePasse.invalid && inscriptionForm.controls.motDePasse.touched) {
+    <small>8 caractères minimum, avec au moins une lettre et un chiffre.</small>
+  }
+
+  <label>
+    Confirmer le mot de passe
+    <input type="password" formControlName="confirmation" autocomplete="new-password" />
+  </label>
+  @if (inscriptionForm.hasError('differents') && inscriptionForm.controls.confirmation.touched) {
+    <small>Les deux mots de passe ne sont pas identiques.</small>
+  }
+
+  <button type="submit" [disabled]="enCours()">
+    {{ enCours() ? 'Création…' : 'Créer mon compte' }}
+  </button>
+</form>
+
+<p class="bas">
+  Déjà un compte ?
+  <a routerLink="/connexion" [queryParams]="retour ? { retour } : {}">Se connecter</a>
+</p>

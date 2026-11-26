@@ -1,0 +1,37 @@
+<h1>Bonjour {{ auth.utilisateur()?.nom }}</h1>
+<p class="email">{{ auth.utilisateur()?.email }}</p>
+
+<h2>Mes commandes</h2>
+
+@if (erreur()) {
+  <p class="erreur">{{ erreur() }}</p>
+} @else if (commandes(); as liste) {
+  @for (commande of liste; track commande.id) {
+    <article>
+      <header>
+        <h3>Commande n°{{ commande.id }}</h3>
+        <span class="statut" [class]="commande.statut">{{ libelles[commande.statut] }}</span>
+        <time>{{ commande.creeLe | date:'d MMMM yyyy' }}</time>
+      </header>
+      <ul>
+        @for (ligne of commande.lignes; track $index) {
+          <li>
+            <span>{{ ligne.quantite }} × {{ ligne.nom }} ({{ ligne.taille }})</span>
+            <span>{{ ligne.prixUnitaire * ligne.quantite | currency:'EUR' }}</span>
+          </li>
+        }
+        <li class="total">
+          <span>Total</span>
+          <strong>{{ commande.total | currency:'EUR' }}</strong>
+        </li>
+      </ul>
+    </article>
+  } @empty {
+    <div class="vide">
+      <p>Tu n'as pas encore passé de commande.</p>
+      <a routerLink="/" class="bouton">Découvrir le catalogue</a>
+    </div>
+  }
+} @else {
+  <p>Chargement…</p>
+}

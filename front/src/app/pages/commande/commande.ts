@@ -4,6 +4,7 @@ import { RouterLink } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { PanierService } from '../../services/panier';
 import { CommandeService } from '../../services/commande';
+import { AuthService } from '../../services/auth';
 
 @Component({
   selector: 'app-commande',
@@ -13,6 +14,7 @@ import { CommandeService } from '../../services/commande';
 })
 export class Commande {
   protected panier = inject(PanierService);
+  protected auth = inject(AuthService);
   private commandeService = inject(CommandeService);
   private fb = inject(FormBuilder);
 
@@ -28,6 +30,11 @@ export class Commande {
   });
 
   constructor() {
+    const utilisateur = this.auth.utilisateur();
+    if (utilisateur) {
+      this.commandeForm.patchValue({ nom: utilisateur.nom, email: utilisateur.email });
+      this.commandeForm.controls.email.disable();
+    }
     this.panier.actualiser().subscribe(message => this.information.set(message));
   }
 

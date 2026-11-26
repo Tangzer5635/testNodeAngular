@@ -1,0 +1,120 @@
+@use "../../../styles/variables" as v;
+
+h1 {
+  @include v.titre-page;
+  margin-bottom: 0.5rem;
+}
+
+.email {
+  margin: 0 0 3rem;
+  color: v.$gris-texte;
+}
+
+h2 {
+  @include v.sous-titre;
+}
+
+.erreur {
+  @include v.message-erreur;
+}
+
+article {
+  margin-bottom: 1.25rem;
+  padding: 1.75rem;
+  border-radius: v.$rayon-carte;
+  background-color: v.$gris-fond;
+
+  header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+
+    h3 {
+      margin: 0;
+      font-size: 1.1875rem;
+      font-weight: 600;
+      letter-spacing: -0.015em;
+    }
+
+    time {
+      margin-left: auto;
+      color: v.$gris-texte;
+      font-size: 0.875rem;
+    }
+  }
+}
+
+.statut {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.875rem;
+
+  &::before {
+    content: "";
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    background-color: currentColor;
+  }
+
+  &.en_attente {
+    color: v.$orange-stock;
+  }
+
+  &.expediee {
+    color: v.$vert;
+  }
+
+  &.annulee {
+    color: v.$gris-discret;
+  }
+}
+
+ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+
+  li {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.6rem 0;
+    border-bottom: 1px solid v.$filet;
+    font-size: 0.9375rem;
+
+    span:last-child {
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+  }
+
+  .total {
+    border-bottom: none;
+    padding-top: 0.9rem;
+
+    strong {
+      font-size: 1.1875rem;
+      font-weight: 600;
+    }
+  }
+}
+
+.vide {
+  padding: 3.5rem 1.5rem;
+  border-radius: v.$rayon-carte;
+  background-color: v.$gris-fond;
+  text-align: center;
+
+  p {
+    margin: 0 0 1.5rem;
+    font-size: 1.1875rem;
+  }
+}
+
+.bouton {
+  @include v.bouton-principal;
+}

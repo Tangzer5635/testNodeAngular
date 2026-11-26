@@ -20,6 +20,10 @@ export class CommandeService {
     return this.http.get<Commande[]>(this.apiUrl, { params });
   }
 
+  getMiennes(): Observable<Commande[]> {
+    return this.http.get<Commande[]>(`${this.apiUrl}/miennes`);
+  }
+
   changerStatut(id: number, statut: StatutCommande): Observable<Commande> {
     return this.http.patch<Commande>(`${this.apiUrl}/${id}`, { statut });
   }

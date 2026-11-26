@@ -44,3 +44,21 @@ button {
   margin-top: 2rem;
   border-radius: v.$rayon-champ;
 }
+
+.bas {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid v.$filet;
+  color: v.$gris-texte;
+  font-size: 0.9375rem;
+  text-align: center;
+
+  a {
+    color: v.$lien;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}

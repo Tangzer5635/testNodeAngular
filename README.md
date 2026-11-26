@@ -71,16 +71,18 @@ La page de connexion est sur `/connexion`.
 | Méthode | URL | Rôle | Jeton requis |
 |---|---|---|---|
 | POST | `/api/auth/login` | connexion → `{ token }` | non |
+| POST | `/api/auth/inscription` | créer un compte client (201 → `{ token }`, 409 si l'email existe) | non |
 | GET | `/api/vetements` (options `?categorie=vestes&recherche=jean&tri=prix_asc`) | liste des vêtements | non |
 | GET | `/api/vetements/:id` | un vêtement | non |
-| POST | `/api/vetements` | créer (201) | **oui** |
-| PUT | `/api/vetements/:id` | modifier | **oui** |
-| DELETE | `/api/vetements/:id` | supprimer (204) | **oui** |
+| POST | `/api/vetements` | créer (201) | admin |
+| PUT | `/api/vetements/:id` | modifier | admin |
+| DELETE | `/api/vetements/:id` | supprimer (204) | admin |
 | GET | `/api/categories` | liste des catégories | non |
-| POST | `/api/commandes` | passer commande (201 → `{ id, total }`, 409 si stock insuffisant) | non |
-| GET | `/api/commandes` (option `?statut=en_attente`) | liste des commandes | **oui** |
-| PATCH | `/api/commandes/:id` (`{ "statut": "expediee" }` ou `"annulee"`) | changer le statut (annuler remet en stock) | **oui** |
-| POST | `/api/images` (champ `image`, JPEG/PNG/WebP, 2 Mo max) | envoyer une image → `{ image }` | **oui** |
+| POST | `/api/commandes` | passer commande (201 → `{ id, total }`, 409 si stock insuffisant) ; liée au compte si un jeton est envoyé | non |
+| GET | `/api/commandes/miennes` | commandes du client connecté | client |
+| GET | `/api/commandes` (option `?statut=en_attente`) | liste des commandes | admin |
+| PATCH | `/api/commandes/:id` (`{ "statut": "expediee" }` ou `"annulee"`) | changer le statut (annuler remet en stock) | admin |
+| POST | `/api/images` (champ `image`, JPEG/PNG/WebP, 2 Mo max) | envoyer une image → `{ image }` | admin |
 | GET | `/images/:fichier` | images des vêtements (`back/public/images` et `back/uploads`) | non |
 
 Jeton : en-tête `Authorization: Bearer <jeton>`.
@@ -88,23 +90,36 @@ Un vêtement contient ses tailles et leur stock : `"tailles": [{ "taille": "M", 
 
 Passer commande : `{ "client": { "nom", "email", "adresse" }, "lignes": [{ "vetementId", "taille", "quantite" }] }`. Le prix n'est **jamais** envoyé par le front : le back le lit dans la base, vérifie et décompte le stock dans une transaction.
 
-Erreurs, toujours en JSON : 400 (données invalides), 401 (non authentifié), 404 (introuvable), 409 (conflit : stock insuffisant, statut impossible), 429 (trop de tentatives de connexion : 10 échecs par IP sur 15 min), 500 (erreur serveur).
+Erreurs, toujours en JSON : 400 (données invalides), 401 (non authentifié), 403 (rôle insuffisant), 404 (introuvable), 409 (conflit : stock insuffisant, statut impossible), 429 (trop de tentatives de connexion : 10 échecs par IP sur 15 min), 500 (erreur serveur).
 
 ## Accès aux pages
 
-| Page | Visiteur | Admin connecté |
-|---|---|---|
-| `/`, `/vetements/:id`, `/panier`, `/commande` | ✅ | ✅ |
-| `/connexion` | ✅ | ↪ renvoyé vers `/admin` |
-| `/admin`, `/admin/nouveau`, `/admin/:id`, `/admin/commandes` | ↪ renvoyé vers `/connexion` (puis ramené à la page demandée) | ✅ |
+Deux rôles : **client** (compte créé depuis `/inscription`) et **admin** (créé avec `creer-admin`).
+
+| Page | Visiteur | Client | Admin |
+|---|---|---|---|
+| `/`, `/vetements/:id`, `/panier`, `/commande` | ✅ | ✅ | ✅ |
+| `/connexion`, `/inscription` | ✅ | ↪ `/mon-compte` | ↪ `/admin` |
+| `/mon-compte` | ↪ `/connexion` | ✅ | ✅ |
+| `/admin`, `/admin/nouveau`, `/admin/:id`, `/admin/commandes` | ↪ `/connexion` | ↪ `/` | ✅ |
 
 La session se termine automatiquement à l'expiration du jeton (2 h). L'API vérifie aussi le jeton : masquer les pages côté Angular ne suffirait pas.
 
 ## Tests
 
 ```bash
-cd back && npm test                     # API : sécurité et erreurs (sans base de données)
-cd front && npx ng test --watch=false   # Angular : panier, guards, header
+cd back && npm test                     # API : sécurité, validations, rôles (sans base de données)
+cd front && npx ng test --watch=false   # Angular : services, guards, pages
+```
+
+Tests du back sur une vraie base PostgreSQL (catalogue, comptes, commandes, transaction, 10 achats simultanés…).
+Ils effacent la base utilisée : ils ne se lancent que si son nom finit par `_test`.
+
+```bash
+docker compose exec db createdb -U postgres boutique_test
+cd back
+cp .env.test.example .env.test         # mettre le mot de passe de PostgreSQL
+npm run test:bdd
 ```
 
 ## CI/CD (GitHub Actions)
@@ -137,14 +152,19 @@ docker compose -f docker-compose.prod.yaml up -d
 `db/init.sql` n'est lu que lorsque la base est **vide**. Pour garder tes données en passant à une nouvelle version,
 lance les scripts de `db/migrations/` (une seule fois, dans l'ordre) :
 
+| Version | Script |
+|---|---|
+| v1.5.0 | `db/migrations/v1.5.0-stock-commandes.sql` |
+| v2.1.0 | `db/migrations/v2.1.0-comptes-clients.sql` |
+
 ```powershell
 # PowerShell
-Get-Content db/migrations/v1.5.0-stock-commandes.sql | docker compose exec -T db psql -U postgres -d boutique
+Get-Content db/migrations/v2.1.0-comptes-clients.sql | docker compose exec -T db psql -U postgres -d boutique
 ```
 
 ```bash
 # Linux / macOS
-docker compose exec -T db psql -U postgres -d boutique < db/migrations/v1.5.0-stock-commandes.sql
+docker compose exec -T db psql -U postgres -d boutique < db/migrations/v2.1.0-comptes-clients.sql
 ```
 
 ## Repartir d'une base neuve

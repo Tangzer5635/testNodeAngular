@@ -31,6 +31,7 @@
           <strong>{{ commande.nomClient }}</strong>
           <a [href]="'mailto:' + commande.email">{{ commande.email }}</a>
           <span class="adresse">{{ commande.adresse }}</span>
+          <span class="compte">{{ commande.utilisateurId ? 'Client inscrit' : 'Commande sans compte' }}</span>
         </div>
 
         <ul>
