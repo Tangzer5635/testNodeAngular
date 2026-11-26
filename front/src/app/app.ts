@@ -1,6 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from './services/auth';
+import { PanierService } from './services/panier';
 
 @Component({
   selector: 'app-root',
@@ -14,6 +15,7 @@ export class App {
 
   protected nomBoutique = 'NodeAngular';
   protected annee = new Date().getFullYear();
+  protected panier = inject(PanierService);
 
   protected seDeconnecter() {
     this.auth.deconnexion();

@@ -6,7 +6,7 @@ Site vitrine de vente de vêtements, avec une partie administration protégée p
 |---|---|
 | `db/` | script SQL de création des tables et des données de départ |
 | `back/` | API REST Express (routes → controllers → services → repositories), authentification JWT |
-| `front/` | application Angular (catalogue, fiche produit, connexion, administration) |
+| `front/` | application Angular (catalogue avec filtres, fiche produit, panier, connexion, administration) |
 
 ## Configuration (dans tous les cas)
 
@@ -69,16 +69,34 @@ La page de connexion est sur `/connexion`.
 | Méthode | URL | Rôle | Jeton requis |
 |---|---|---|---|
 | POST | `/api/auth/login` | connexion → `{ token }` | non |
-| GET | `/api/vetements` (option `?categorie=vestes`) | liste des vêtements | non |
+| GET | `/api/vetements` (options `?categorie=vestes&recherche=jean&tri=prix_asc`) | liste des vêtements | non |
 | GET | `/api/vetements/:id` | un vêtement | non |
 | POST | `/api/vetements` | créer (201) | **oui** |
 | PUT | `/api/vetements/:id` | modifier | **oui** |
 | DELETE | `/api/vetements/:id` | supprimer (204) | **oui** |
 | GET | `/api/categories` | liste des catégories | non |
-| GET | `/images/:fichier` | images des vêtements (`back/public/images`) | non |
+| POST | `/api/images` (champ `image`, JPEG/PNG/WebP, 2 Mo max) | envoyer une image → `{ image }` | **oui** |
+| GET | `/images/:fichier` | images des vêtements (`back/public/images` et `back/uploads`) | non |
 
 Jeton : en-tête `Authorization: Bearer <jeton>`.
-Erreurs, toujours en JSON : 400 (données invalides), 401 (non authentifié), 404 (introuvable), 500 (erreur serveur).
+Erreurs, toujours en JSON : 400 (données invalides), 401 (non authentifié), 404 (introuvable), 429 (trop de tentatives de connexion : 10 échecs par IP sur 15 min), 500 (erreur serveur).
+
+## Accès aux pages
+
+| Page | Visiteur | Admin connecté |
+|---|---|---|
+| `/`, `/vetements/:id`, `/panier` | ✅ | ✅ |
+| `/connexion` | ✅ | ↪ renvoyé vers `/admin` |
+| `/admin`, `/admin/nouveau`, `/admin/:id` | ↪ renvoyé vers `/connexion` (puis ramené à la page demandée) | ✅ |
+
+La session se termine automatiquement à l'expiration du jeton (2 h). L'API vérifie aussi le jeton : masquer les pages côté Angular ne suffirait pas.
+
+## Tests
+
+```bash
+cd back && npm test                     # API : sécurité et erreurs (sans base de données)
+cd front && npx ng test --watch=false   # Angular : panier, guards, header
+```
 
 ## Repartir d'une base neuve
 

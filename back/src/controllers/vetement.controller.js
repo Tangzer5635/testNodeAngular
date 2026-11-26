@@ -11,9 +11,6 @@ export const getAll = async (req, res) => {
 
 export const getById = async (req, res) => {
   const vetement = await vetementService.getVetementById(Number(req.params.id));
-  if (!vetement) {
-    return res.status(404).json({ message: 'Vêtement non trouvé' });
-  }
   res.json(vetement);
 };
 

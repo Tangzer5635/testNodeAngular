@@ -2,6 +2,12 @@
   <a routerLink="/" class="logo">{{ nomBoutique }}</a>
   <nav>
     <a routerLink="/" routerLinkActive="actif" [routerLinkActiveOptions]="{ exact: true }">Catalogue</a>
+    <a routerLink="/panier" routerLinkActive="actif">
+      Panier
+      @if (panier.nombreArticles() > 0) {
+        <span class="badge">{{ panier.nombreArticles() }}</span>
+      }
+    </a>
     @if (auth.estConnecte()) {
       <a routerLink="/admin" routerLinkActive="actif">Administration</a>
       <button type="button" (click)="seDeconnecter()">Déconnexion</button>

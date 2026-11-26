@@ -17,16 +17,12 @@ p {
   color: v.$couleur-texte-doux;
 }
 
-a {
-  display: inline-block;
-  margin-top: v.$espace;
-  padding: (v.$espace * 0.6) (v.$espace * 1.4);
-  background-color: v.$couleur-accent;
-  color: white;
-  text-decoration: none;
-  font-weight: 600;
-  border-radius: v.$rayon;
+.prix {
+  color: v.$couleur-accent;
+  font-size: 1.4rem;
+  font-weight: 700;
 }
+
 img {
   display: block;
   width: 100%;
@@ -35,4 +31,68 @@ img {
   object-fit: cover;
   border-radius: v.$rayon;
   margin-bottom: v.$espace;
+}
+
+// ---------- Choix de la taille ----------
+.tailles {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: v.$espace * 0.5;
+  margin: v.$espace 0;
+
+  .libelle {
+    font-weight: 600;
+    margin-right: v.$espace * 0.5;
+  }
+
+  button {
+    min-width: 3rem;
+    padding: (v.$espace * 0.4) (v.$espace * 0.7);
+    border: 1px solid v.$couleur-primaire;
+    border-radius: v.$rayon * 0.5;
+    background-color: white;
+    color: v.$couleur-primaire;
+    font: inherit;
+    cursor: pointer;
+
+    &:hover,
+    &.actif {
+      background-color: v.$couleur-primaire;
+      color: white;
+    }
+  }
+}
+
+// ---------- Boutons et liens ----------
+.ajouter {
+  padding: (v.$espace * 0.7) (v.$espace * 1.6);
+  border: none;
+  border-radius: v.$rayon;
+  background-color: v.$couleur-accent;
+  color: white;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:disabled {
+    background-color: #c9c9c9;
+    cursor: not-allowed;
+  }
+}
+
+.confirmation {
+  color: #1e7b34;
+  font-weight: 600;
+
+  .lien {
+    color: v.$couleur-primaire;
+  }
+}
+
+.retour {
+  display: inline-block;
+  margin-top: v.$espace * 1.5;
+  color: v.$couleur-primaire;
+  font-weight: 600;
 }

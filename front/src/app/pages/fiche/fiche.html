@@ -7,9 +7,27 @@
   <h1>{{ v.nom }}</h1>
   <p>{{ v.description }}</p>
   <p>Catégorie : {{ v.categorie }}</p>
-  <p>Prix : {{ v.prix | currency:'EUR' }}</p>
-  <p>Tailles disponibles : {{ v.tailles.join(', ') }}</p>
+  <p class="prix">{{ v.prix | currency:'EUR' }}</p>
+
+  <div class="tailles">
+    <span class="libelle">Taille</span>
+    @for (taille of v.tailles; track taille) {
+      <button type="button" [class.actif]="tailleChoisie() === taille" (click)="choisirTaille(taille)">
+        {{ taille }}
+      </button>
+    }
+  </div>
+
+  <button type="button" class="ajouter" [disabled]="!tailleChoisie()" (click)="ajouterAuPanier()">
+    {{ tailleChoisie() ? 'Ajouter au panier' : 'Choisis une taille' }}
+  </button>
+
+  @if (ajoute()) {
+    <p class="confirmation">
+      Ajouté au panier (taille {{ tailleChoisie() }}). <a routerLink="/panier" class="lien">Voir le panier</a>
+    </p>
+  }
 } @else {
   <p>Chargement…</p>
 }
-<a routerLink="/">Retour au catalogue</a>
+<a routerLink="/" class="retour">Retour au catalogue</a>

@@ -24,7 +24,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
       // Sauf pour la requête de connexion elle-même, dont le 401 = mauvais identifiants.
       if (erreur.status === 401 && versApi && !req.url.endsWith('/auth/login')) {
         auth.deconnexion();
-        router.navigate(['/connexion']);
+        router.navigate(['/connexion'], { queryParams: { retour: router.url } });
       }
       return throwError(() => erreur);
     }),

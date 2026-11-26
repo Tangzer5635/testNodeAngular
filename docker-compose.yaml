@@ -35,7 +35,7 @@ services:
       - uploads:/app/uploads # pour que les images envoyées par l'admin soient persistantes
     depends_on:
       db:
-        condition: service_healthy # attend que Postgres accepte les connexions  condition: service_healthy # attend que Postgres accepte les connexions
+        condition: service_healthy # attend que Postgres accepte les connexions
 
   front:
     build: ./front

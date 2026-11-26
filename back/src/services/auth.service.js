@@ -13,6 +13,6 @@ export const connexion = async (email, motDePasse) => {
     if (!motDePasseValide) {
         throw new UnauthorizedError('Email ou mot de passe incorrect');
     }
-    const token = jwt.sign({ sub: utilisateur.id, email: utilisateur.email }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN });
+    const token = jwt.sign({ sub: utilisateur.id, email: utilisateur.email }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN ?? '2h' });
     return { token };
 }

@@ -1,6 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../../services/auth';
 
 @Component({
@@ -12,6 +12,7 @@ import { AuthService } from '../../services/auth';
 export class Connexion {
   private auth = inject(AuthService);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
   private fb = inject(FormBuilder);
 
   protected erreur = signal<string | null>(null);
@@ -32,7 +33,11 @@ export class Connexion {
     this.enCours.set(true);
 
     this.auth.connexion(email, motDePasse).subscribe({
-      next: () => this.router.navigate(['/admin']),
+      next: () => {
+        // Retour à la page demandée avant la connexion (seulement une page de l'admin)
+        const retour = this.route.snapshot.queryParamMap.get('retour');
+        this.router.navigateByUrl(retour?.startsWith('/admin') ? retour : '/admin');
+      },
       error: err => {
         this.enCours.set(false);
         this.erreur.set(

@@ -1,0 +1,50 @@
+<h1>Mon panier</h1>
+
+@if (information()) {
+  <p class="information">{{ information() }}</p>
+}
+
+@if (panier.lignes().length === 0) {
+  <div class="vide">
+    <p>Ton panier est vide.</p>
+    <a routerLink="/" class="bouton">Découvrir le catalogue</a>
+  </div>
+} @else {
+  <ul>
+    @for (ligne of panier.lignes(); track ligne.vetementId + '-' + ligne.taille) {
+      <li>
+        <a [routerLink]="['/vetements', ligne.vetementId]" class="vignette">
+          @if (ligne.image) {
+            <img [src]="imagesUrl + '/' + ligne.image" [alt]="ligne.nom" />
+          }
+        </a>
+
+        <div class="infos">
+          <a [routerLink]="['/vetements', ligne.vetementId]" class="nom">{{ ligne.nom }}</a>
+          <span>Taille {{ ligne.taille }} · {{ ligne.prix | currency:'EUR' }}</span>
+        </div>
+
+        <div class="quantite">
+          <button type="button" (click)="moins(ligne)" [attr.aria-label]="'Retirer un ' + ligne.nom">−</button>
+          <span>{{ ligne.quantite }}</span>
+          <button type="button" (click)="plus(ligne)" [disabled]="ligne.quantite >= quantiteMax" [attr.aria-label]="'Ajouter un ' + ligne.nom">+</button>
+        </div>
+
+        <strong class="sous-total">{{ ligne.prix * ligne.quantite | currency:'EUR' }}</strong>
+
+        <button type="button" class="retirer" (click)="panier.retirer(ligne)">Retirer</button>
+      </li>
+    }
+  </ul>
+
+  <div class="resume">
+    <p>
+      {{ panier.nombreArticles() }} article{{ panier.nombreArticles() > 1 ? 's' : '' }}
+      — Total : <strong>{{ panier.total() | currency:'EUR' }}</strong>
+    </p>
+    <div class="actions">
+      <button type="button" class="secondaire" (click)="vider()">Vider le panier</button>
+      <button type="button" class="bouton" (click)="commander()">Commander</button>
+    </div>
+  </div>
+}

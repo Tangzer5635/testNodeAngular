@@ -36,9 +36,35 @@ header {
     gap: v.$espace * 1.5;
     font-weight: 600;
 
+    button {
+      padding: 0;
+      border: none;
+      background: none;
+      color: white;
+      font: inherit;
+      cursor: pointer;
+      transition: color v.$transition;
+
+      &:hover {
+        color: v.$couleur-accent;
+      }
+    }
+
     .actif {
       color: v.$couleur-accent;
       border-bottom: 2px solid v.$couleur-accent;
+    }
+
+    .badge {
+      display: inline-block;
+      min-width: 1.4rem;
+      margin-left: v.$espace * 0.25;
+      padding: 0 (v.$espace * 0.35);
+      border-radius: 999px;
+      background-color: v.$couleur-accent;
+      color: white;
+      font-size: 0.8rem;
+      text-align: center;
     }
   }
 }
@@ -62,17 +88,3 @@ footer {
     margin: 0;
   }
 }
-
-    button {
-      padding: 0;
-      border: none;
-      background: none;
-      color: white;
-      font: inherit;
-      cursor: pointer;
-      transition: color v.$transition;
-
-      &:hover {
-        color: v.$couleur-accent;
-      }
-    }
