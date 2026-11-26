@@ -1,0 +1,12 @@
+<h1>Catalogue</h1>
+<ul>@for (vetement of vetements(); track vetement.id) {
+    <li>
+        <h2>{{ vetement.nom }}</h2>
+        <p>{{ vetement.categorie }}</p>
+        <p>{{ vetement.prix | currency:'EUR' }}</p>
+    </li>
+}
+@empty {
+  <li>Aucun article disponible</li>
+}
+</ul>
