@@ -6,7 +6,6 @@ import { ConflictError } from '../errors/ConflictError.js';
 
 export const QUANTITE_MAX = 10;
 
-// Statut actuel → statuts possibles ensuite
 const TRANSITIONS = {
   en_attente: ['expediee', 'annulee'],
   expediee: [],
@@ -36,8 +35,6 @@ const validerClient = (client) => {
   return { nom: client.nom.trim(), email: client.email.trim(), adresse: client.adresse.trim() };
 };
 
-// Vérifie les lignes et regroupe les doublons (même vêtement, même taille).
-// Le front n'envoie QUE vetementId, taille et quantite : le prix est toujours lu dans la base.
 const validerLignes = (lignes) => {
   if (!Array.isArray(lignes) || lignes.length === 0 || lignes.length > 50) {
     throw new ValidationError('Le panier doit contenir entre 1 et 50 lignes');
@@ -56,7 +53,6 @@ const validerLignes = (lignes) => {
     }
     regroupees.set(cle, { vetementId: l.vetementId, taille: l.taille, quantite });
   }
-  // Toujours verrouiller les stocks dans le même ordre : évite que deux commandes s'attendent mutuellement
   return [...regroupees.values()].sort((a, b) => a.vetementId - b.vetementId || a.taille.localeCompare(b.taille));
 };
 
@@ -81,7 +77,6 @@ export const passerCommande = async (data) => {
       await commandeRepository.retirerDuStock(db, ligne.vetementId, ligne.taille, ligne.quantite);
       lignesCompletes.push({ ...ligne, nom: stock.nom, prix: stock.prix });
     }
-    // Si une erreur arrive ici, le ROLLBACK annule aussi les stocks déjà retirés
     return commandeRepository.create(db, client, lignesCompletes);
   });
 };

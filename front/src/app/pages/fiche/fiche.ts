@@ -32,12 +32,10 @@ export class Fiche {
     return v !== null && stockTotal(v) === 0;
   });
 
-  // Stock de la taille choisie
   protected stockChoisi = computed(() =>
     this.vetement()?.tailles.find(t => t.taille === this.tailleChoisie())?.stock ?? 0
   );
 
-  // On ne peut pas mettre dans le panier plus que le stock (ni plus de 10)
   protected peutAjouter = computed(() => {
     const v = this.vetement();
     const taille = this.tailleChoisie();

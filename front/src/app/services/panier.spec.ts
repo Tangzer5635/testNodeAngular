@@ -49,7 +49,7 @@ describe('PanierService', () => {
 
   it('ne dépasse jamais le stock de la taille', () => {
     for (let i = 0; i < 5; i++) {
-      panier.ajouter(jean, '42'); // seulement 2 en stock
+      panier.ajouter(jean, '42');
     }
     expect(panier.lignes()[0].quantite).toBe(2);
     panier.changerQuantite(panier.lignes()[0], 8);
@@ -69,7 +69,7 @@ describe('PanierService', () => {
 
   it('sauvegarde le panier dans le localStorage', () => {
     panier.ajouter(jean, '40');
-    TestBed.tick(); // exécute l'effect de sauvegarde
+    TestBed.tick();
     expect(JSON.parse(localStorage.getItem('panier')!)[0].vetementId).toBe(1);
   });
 
@@ -89,7 +89,6 @@ describe('PanierService', () => {
     panier.ajouter(jean, '40');
     panier.changerQuantite(panier.lignes()[0], 6);
     panier.ajouter(sweat, 'M');
-    // Dans la boutique : le jean a baissé (29,99 €) et il n'en reste que 4 en 40 ; le sweat n'existe plus
     const message = panier.synchroniser([{ ...jean, prix: 29.99, tailles: [{ taille: '40', stock: 4 }] }]);
     expect(panier.lignes().length).toBe(1);
     expect(panier.lignes()[0].prix).toBe(29.99);

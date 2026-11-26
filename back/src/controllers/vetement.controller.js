@@ -1,8 +1,5 @@
 import * as vetementService from '../services/vetement.service.js';
 
-// Pas de try/catch ici : depuis Express 5, une erreur levée dans une fonction async
-// est transmise automatiquement au gestionnaire d'erreurs global (src/middlewares/erreurs.js).
-
 export const getAll = async (req, res) => {
   const { categorie, recherche, tri } = req.query;
   const vetements = await vetementService.getVetements({ categorie, recherche, tri });

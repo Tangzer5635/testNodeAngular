@@ -6,15 +6,52 @@
   box-sizing: border-box;
 }
 
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
   margin: 0;
   font-family: v.$police;
-  line-height: 1.6;
-  color: v.$couleur-texte;
-  background-color: v.$couleur-fond;
+  font-size: 1.0625rem;
+  line-height: 1.47;
+  letter-spacing: -0.012em;
+  color: v.$encre;
+  background-color: v.$blanc;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 h1,
-h2 {
-  color: v.$couleur-primaire;
+h2,
+h3 {
+  font-family: v.$police-titre;
+  color: v.$encre;
+}
+
+img {
+  max-width: 100%;
+}
+
+a {
+  color: v.$lien;
+}
+
+:focus-visible {
+  outline: 2px solid v.$bleu;
+  outline-offset: 2px;
+}
+
+::selection {
+  background-color: rgba(0, 113, 227, 0.18);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
 }

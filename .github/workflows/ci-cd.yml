@@ -1,11 +1,3 @@
-# CI/CD de la boutique
-#
-# CI (à chaque push sur main et à chaque pull request) :
-#   1. tests du back       2. tests + build du front       3. build des images Docker
-#
-# CD (quand on pousse un tag v1.4.0, v2.0.0…) :
-#   4. publication des images sur ghcr.io (onglet « Packages » du dépôt)
-#   5. création automatique de la release GitHub
 name: CI/CD
 
 on:
@@ -14,12 +6,10 @@ on:
     tags: ['v*']
   pull_request:
 
-# Si on pousse deux fois de suite, l'ancienne exécution est annulée
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-# Droits minimum par défaut ; chaque job demande seulement ce dont il a besoin
 permissions:
   contents: read
 
@@ -59,20 +49,19 @@ jobs:
 
   docker:
     name: Image Docker – ${{ matrix.service }}
-    needs: [back, front] # seulement si tous les tests sont passés
+    needs: [back, front]
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write # pour publier sur ghcr.io
+      packages: write
     strategy:
       matrix:
-        service: [back, front] # le même job, lancé une fois par dossier
+        service: [back, front]
     env:
       PUBLIER: ${{ startsWith(github.ref, 'refs/tags/v') }}
     steps:
       - uses: actions/checkout@v7
 
-      # ghcr.io exige un nom en minuscules (Tangzer5635 → tangzer5635)
       - name: Nom de l'image
         run: echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/boutique-${{ matrix.service }}" >> "$GITHUB_ENV"
 
@@ -86,7 +75,6 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Tag v1.4.0 → images 1.4.0, 1.4 et latest
       - name: Étiquettes de l'image
         id: meta
         uses: docker/metadata-action@v6
@@ -114,10 +102,9 @@ jobs:
     needs: docker
     runs-on: ubuntu-latest
     permissions:
-      contents: write # pour créer la release
+      contents: write
     steps:
       - uses: actions/checkout@v7
-      # Titre de la release = message du tag (git tag -a v1.4.0 -m "v1.4.0 – CI/CD")
       - name: Créer la release
         env:
           GH_TOKEN: ${{ github.token }}

@@ -1,99 +1,116 @@
 @use "../../../styles/variables" as v;
 
-.bouton {
-  display: inline-block;
-  padding: (v.$espace * 0.6) (v.$espace * 1.4);
-  border: none;
-  border-radius: v.$rayon;
-  background-color: v.$couleur-accent;
-  color: white;
-  font: inherit;
-  font-weight: 600;
-  text-decoration: none;
-  cursor: pointer;
+h1 {
+  @include v.titre-page;
 }
 
 .information {
-  padding: (v.$espace * 0.6) v.$espace;
-  border-left: 4px solid v.$couleur-accent;
-  background-color: v.$couleur-carte;
-  border-radius: v.$rayon * 0.5;
+  @include v.message-info;
+  margin: 0 0 1.5rem;
 }
 
 .vide {
-  padding: v.$espace * 2;
-  background-color: v.$couleur-carte;
-  border-radius: v.$rayon;
-  box-shadow: v.$ombre;
+  padding: 4rem 1rem;
+  border-radius: v.$rayon-carte;
+  background-color: v.$gris-fond;
   text-align: center;
+
+  p {
+    margin: 0 0 1.5rem;
+    font-size: 1.3125rem;
+  }
+}
+
+.bouton {
+  @include v.bouton-principal;
 }
 
 ul {
   list-style: none;
-  padding: 0;
   margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: v.$espace;
+  padding: 0;
+  border-top: 1px solid v.$filet;
 }
 
 li {
   display: grid;
-  grid-template-columns: 80px 1fr auto auto auto;
-  align-items: center;
-  gap: v.$espace;
-  padding: v.$espace;
-  background-color: v.$couleur-carte;
-  border-radius: v.$rayon;
-  box-shadow: v.$ombre;
+  grid-template-columns: 7.5rem minmax(0, 1fr) auto 7rem;
+  grid-template-areas:
+    "image infos quantite prix"
+    "image infos . retirer";
+  column-gap: 1.75rem;
+  row-gap: 0.4rem;
+  align-items: start;
+  padding: 2rem 0;
+  border-bottom: 1px solid v.$filet;
 }
 
-.vignette img {
-  display: block;
-  width: 80px;
-  aspect-ratio: 1;
-  object-fit: cover;
-  border-radius: v.$rayon * 0.5;
+.vignette {
+  grid-area: image;
+
+  img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    border-radius: v.$rayon-champ;
+    background-color: v.$gris-fond;
+  }
 }
 
 .infos {
+  grid-area: infos;
   display: flex;
   flex-direction: column;
+  gap: 0.15rem;
 
   .nom {
-    color: v.$couleur-primaire;
-    font-weight: 700;
+    margin-bottom: 0.35rem;
+    color: v.$encre;
+    font-family: v.$police-titre;
+    font-size: 1.3125rem;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    line-height: 1.2;
     text-decoration: none;
+
+    &:hover {
+      color: v.$lien;
+    }
   }
 
   span {
-    color: v.$couleur-texte-doux;
+    color: v.$gris-texte;
+    font-size: 0.875rem;
   }
 
   .stock-faible {
-    color: v.$couleur-accent;
-    font-size: 0.9rem;
-    font-weight: 600;
+    margin-top: 0.35rem;
+    color: v.$orange-stock;
   }
 }
 
 .quantite {
-  display: flex;
+  grid-area: quantite;
+  display: inline-flex;
   align-items: center;
-  gap: v.$espace * 0.5;
+  border: 1px solid v.$filet;
+  border-radius: v.$rayon-pilule;
 
   button {
-    width: 2rem;
-    height: 2rem;
-    border: 1px solid v.$couleur-primaire;
+    width: 2.25rem;
+    height: 2.25rem;
+    border: none;
     border-radius: 50%;
-    background-color: white;
-    color: v.$couleur-primaire;
+    background: none;
+    color: v.$lien;
     font: inherit;
+    font-size: 1.25rem;
+    line-height: 1;
     cursor: pointer;
 
     &:disabled {
-      opacity: 0.4;
+      color: v.$filet;
       cursor: not-allowed;
     }
   }
@@ -101,64 +118,82 @@ li {
   span {
     min-width: 1.5rem;
     text-align: center;
-    font-weight: 600;
+    font-variant-numeric: tabular-nums;
   }
 }
 
 .sous-total {
-  min-width: 5rem;
-  text-align: right;
+  grid-area: prix;
+  justify-self: end;
+  font-size: 1.1875rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
 }
 
 .retirer {
-  border: none;
-  background: none;
-  color: #b3261e;
-  font: inherit;
-  text-decoration: underline;
-  cursor: pointer;
+  @include v.bouton-lien;
+  grid-area: retirer;
+  justify-self: end;
+  font-size: 0.875rem;
 }
 
 .resume {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  align-items: center;
-  gap: v.$espace;
-  margin-top: v.$espace * 1.5;
-  padding: v.$espace * 1.2;
-  background-color: v.$couleur-carte;
-  border-radius: v.$rayon;
-  box-shadow: v.$ombre;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1.5rem;
+  padding-top: 2rem;
 
   p {
     margin: 0;
-    font-size: 1.1rem;
+    color: v.$gris-texte;
   }
 
   strong {
-    color: v.$couleur-accent;
-    font-size: 1.3rem;
+    margin-left: 0.5rem;
+    color: v.$encre;
+    font-family: v.$police-titre;
+    font-size: 1.75rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
   }
 
   .actions {
     display: flex;
-    gap: v.$espace;
+    align-items: center;
+    gap: 1.5rem;
   }
 
   .secondaire {
-    border: none;
-    background: none;
-    color: v.$couleur-texte-doux;
-    font: inherit;
-    text-decoration: underline;
-    cursor: pointer;
+    @include v.bouton-lien;
+    font-size: 0.875rem;
+  }
+
+  .bouton {
+    min-width: 14rem;
   }
 }
 
-// Sur petit écran : la ligne passe sur plusieurs rangées
-@media (max-width: 640px) {
+@media (max-width: v.$ecran-petit) {
   li {
-    grid-template-columns: 64px 1fr;
+    grid-template-columns: 5rem minmax(0, 1fr) auto;
+    grid-template-areas:
+      "image infos infos"
+      "image quantite prix"
+      "image . retirer";
+    column-gap: 1rem;
+  }
+
+  .quantite {
+    justify-self: start;
+  }
+
+  .resume {
+    align-items: stretch;
+
+    .actions {
+      flex-direction: column-reverse;
+      align-items: stretch;
+    }
   }
 }

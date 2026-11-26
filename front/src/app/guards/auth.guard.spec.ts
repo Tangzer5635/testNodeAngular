@@ -3,7 +3,6 @@ import { provideRouter, Router, UrlTree, ActivatedRouteSnapshot, RouterStateSnap
 import { provideHttpClient } from '@angular/common/http';
 import { authGuard, inviteGuard } from './auth.guard';
 
-// Faux jeton JWT : seule la date d'expiration (exp, en secondes) est lue par le front
 const fauxJeton = (expDansSecondes: number) => {
   const payload = btoa(JSON.stringify({ sub: 1, exp: Math.floor(Date.now() / 1000) + expDansSecondes }));
   return `entete.${payload}.signature`;

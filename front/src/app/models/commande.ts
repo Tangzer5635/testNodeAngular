@@ -7,7 +7,7 @@ export const LIBELLES_STATUT: Record<StatutCommande, string> = {
 };
 
 export interface LigneCommande {
-  vetementId: number | null; // null si le vêtement a été supprimé depuis
+  vetementId: number | null;
   nom: string;
   taille: string;
   prixUnitaire: number;
@@ -25,7 +25,6 @@ export interface Commande {
   lignes: LigneCommande[];
 }
 
-// Ce que le front envoie : jamais de prix, c'est le back qui les lit dans la base
 export interface NouvelleCommande {
   client: { nom: string; email: string; adresse: string };
   lignes: { vetementId: number; taille: string; quantite: number }[];

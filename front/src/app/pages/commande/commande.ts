@@ -19,7 +19,6 @@ export class Commande {
   protected erreur = signal<string | null>(null);
   protected information = signal<string | null>(null);
   protected enCours = signal(false);
-  // Rempli quand la commande est enregistrée : la page affiche alors la confirmation
   protected confirmation = signal<{ id: number; total: number; nom: string } | null>(null);
 
   protected commandeForm = this.fb.nonNullable.group({
@@ -29,7 +28,6 @@ export class Commande {
   });
 
   constructor() {
-    // Vérifie les prix et les stocks avant d'afficher le récapitulatif
     this.panier.actualiser().subscribe(message => this.information.set(message));
   }
 
@@ -39,7 +37,6 @@ export class Commande {
       return;
     }
     const client = this.commandeForm.getRawValue();
-    // On n'envoie ni nom ni prix : le back relit tout dans la base
     const lignes = this.panier.lignes().map(l => ({
       vetementId: l.vetementId,
       taille: l.taille,
@@ -57,7 +54,6 @@ export class Commande {
       error: err => {
         this.enCours.set(false);
         if (err.status === 409) {
-          // Quelqu'un a été plus rapide : on remet le panier à jour avec les vrais stocks
           this.erreur.set(`${err.error?.message ?? 'Stock insuffisant'}. Ton panier a été mis à jour, vérifie-le avant de valider.`);
           this.panier.actualiser().subscribe(message => this.information.set(message));
         } else if (err.status === 400 || err.status === 429) {

@@ -3,110 +3,134 @@
 .entete {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-end;
+  gap: 1rem;
+  margin-bottom: 1.75rem;
+
+  h1 {
+    @include v.titre-page;
+    margin: 0;
+  }
 
   .retour {
-    color: v.$couleur-primaire;
-    font-weight: 600;
+    color: v.$lien;
+    font-size: 0.9375rem;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
   }
 }
 
 .filtres {
   display: flex;
   flex-wrap: wrap;
-  gap: v.$espace * 0.5;
-  margin-bottom: v.$espace * 1.5;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
 
   button {
-    padding: (v.$espace * 0.4) v.$espace;
-    border: 1px solid v.$couleur-primaire;
-    border-radius: 999px;
-    background-color: transparent;
-    color: v.$couleur-primaire;
+    padding: 0.45rem 1rem;
+    border: none;
+    border-radius: v.$rayon-pilule;
+    background-color: v.$gris-fond;
+    color: v.$encre;
     font: inherit;
+    font-size: 0.875rem;
     cursor: pointer;
+    transition: background-color v.$transition, color v.$transition;
 
-    &:hover,
+    &:hover {
+      background-color: #e8e8ed;
+    }
+
     &.actif {
-      background-color: v.$couleur-primaire;
-      color: white;
+      background-color: v.$encre;
+      color: v.$blanc;
     }
   }
 }
 
 .erreur {
-  padding: v.$espace;
-  background-color: #fdecea;
-  color: #b3261e;
-  border-radius: v.$rayon;
+  @include v.message-erreur;
 }
 
 article {
-  margin-bottom: v.$espace * 1.2;
-  padding: v.$espace * 1.2;
-  background-color: v.$couleur-carte;
-  border-radius: v.$rayon;
-  box-shadow: v.$ombre;
+  margin-bottom: 1.25rem;
+  padding: 1.75rem;
+  border-radius: v.$rayon-carte;
+  background-color: v.$gris-fond;
 
   header {
     display: flex;
     flex-wrap: wrap;
-    align-items: center;
-    gap: v.$espace;
+    align-items: baseline;
+    gap: 0.75rem;
 
     h2 {
       margin: 0;
-      font-size: 1.15rem;
+      font-size: 1.3125rem;
+      font-weight: 600;
+      letter-spacing: -0.015em;
     }
 
     time {
       margin-left: auto;
-      color: v.$couleur-texte-doux;
+      color: v.$gris-texte;
+      font-size: 0.875rem;
     }
   }
 }
 
 .statut {
-  padding: (v.$espace * 0.15) (v.$espace * 0.6);
-  border-radius: 999px;
-  font-size: 0.85rem;
-  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.875rem;
+
+  &::before {
+    content: "";
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    background-color: currentColor;
+  }
 
   &.en_attente {
-    background-color: #fff4e5;
-    color: #a15c00;
+    color: v.$orange-stock;
   }
 
   &.expediee {
-    background-color: #e6f4ea;
-    color: #1e7b34;
+    color: v.$vert;
   }
 
   &.annulee {
-    background-color: #eeeeee;
-    color: #6b6b6b;
+    color: v.$gris-discret;
   }
 }
 
 .contenu {
   display: grid;
-  grid-template-columns: 1fr 1.4fr;
-  gap: v.$espace * 1.5;
-  margin-top: v.$espace;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+  gap: 2rem;
+  margin-top: 1.25rem;
 }
 
 .client {
   display: flex;
   flex-direction: column;
-  gap: v.$espace * 0.2;
+  gap: 0.15rem;
+  font-size: 0.9375rem;
 
   a {
-    color: v.$couleur-primaire;
+    color: v.$lien;
+    text-decoration: none;
   }
 
   .adresse {
-    color: v.$couleur-texte-doux;
-    white-space: pre-line; // garde les retours à la ligne de l'adresse
+    margin-top: 0.35rem;
+    color: v.$gris-texte;
+    white-space: pre-line;
   }
 }
 
@@ -118,48 +142,50 @@ ul {
   li {
     display: flex;
     justify-content: space-between;
-    gap: v.$espace;
-    padding: (v.$espace * 0.35) 0;
-    border-bottom: 1px solid v.$couleur-fond;
+    gap: 1rem;
+    padding: 0.6rem 0;
+    border-bottom: 1px solid v.$filet;
+    font-size: 0.9375rem;
+
+    span:last-child {
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
   }
 
   .total {
     border-bottom: none;
+    padding-top: 0.9rem;
 
     strong {
-      color: v.$couleur-accent;
+      font-size: 1.1875rem;
+      font-weight: 600;
     }
   }
 }
 
 footer {
   display: flex;
-  gap: v.$espace;
-  margin-top: v.$espace;
-
-  button {
-    padding: (v.$espace * 0.5) v.$espace;
-    border: none;
-    border-radius: v.$rayon;
-    font: inherit;
-    font-weight: 600;
-    cursor: pointer;
-  }
+  align-items: center;
+  gap: 1.5rem;
+  margin-top: 1.5rem;
 
   .expedier {
-    background-color: v.$couleur-primaire;
-    color: white;
+    @include v.bouton-principal;
+    font-size: 0.9375rem;
   }
 
   .annuler {
-    background-color: transparent;
-    color: #b3261e;
-    text-decoration: underline;
+    @include v.bouton-lien;
+    color: v.$rouge;
+    font-size: 0.9375rem;
   }
 }
 
 .vide {
-  color: v.$couleur-texte-doux;
+  padding: 3rem 1rem;
+  color: v.$gris-texte;
+  text-align: center;
 }
 
 @media (max-width: 700px) {

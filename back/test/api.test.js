@@ -1,6 +1,3 @@
-// Tests de l'API qui ne touchent PAS la base de données :
-// ils vérifient la sécurité et les erreurs, qui sont gérées avant tout accès à PostgreSQL.
-// Lancer avec : npm test
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import jwt from 'jsonwebtoken';
@@ -12,7 +9,7 @@ let serveur;
 let url;
 
 before(() => {
-  serveur = app.listen(0); // 0 = un port libre au hasard
+  serveur = app.listen(0);
   url = `http://localhost:${serveur.address().port}`;
 });
 
@@ -108,7 +105,6 @@ test('des tailles sans stock (ancien format) sont refusées (400)', async () => 
   assert.equal(reponse.status, 400);
 });
 
-// ---------- Commandes ----------
 const commande = (corps) => fetch(`${url}/api/commandes`, {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
@@ -157,8 +153,6 @@ test('un statut inconnu est refusé (400)', async () => {
 });
 
 test('après 10 connexions ratées, la 11e est bloquée (429)', async () => {
-  // Le test « connexion sans email » plus haut a déjà compté 1 échec
-  // (le JSON mal formé est rejeté avant d'arriver à la route : il ne compte pas)
   let derniere;
   for (let i = 0; i < 10; i++) {
     derniere = await fetch(`${url}/api/auth/login`, {

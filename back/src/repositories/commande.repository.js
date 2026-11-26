@@ -1,7 +1,5 @@
 import pool from '../config/db.js';
 
-// Toutes les fonctions qui modifient la base reçoivent « db » : la connexion de la transaction en cours.
-
 const SELECT_COMMANDES = `
   SELECT c.id, c.nom_client AS "nomClient", c.email, c.adresse, c.total::float AS total, c.statut,
     c.cree_le AS "creeLe",
@@ -29,8 +27,6 @@ export const findById = async (id, db = pool) => {
   return result.rows[0];
 };
 
-// FOR UPDATE verrouille la ligne de stock jusqu'à la fin de la transaction :
-// deux clients qui achètent la dernière pièce en même temps ne peuvent pas l'avoir tous les deux.
 export const verrouillerStock = async (db, vetementId, taille) => {
   const result = await db.query(
     `SELECT v.nom, v.prix, s.quantite AS stock
@@ -48,7 +44,6 @@ export const retirerDuStock = (db, vetementId, taille, quantite) =>
     [vetementId, taille, quantite]
   );
 
-// Crée la commande et ses lignes ; le total est calculé par PostgreSQL (calcul exact en NUMERIC)
 export const create = async (db, client, lignes) => {
   const commande = await db.query(
     'INSERT INTO commandes (nom_client, email, adresse) VALUES ($1, $2, $3) RETURNING id',
@@ -86,7 +81,6 @@ export const verrouillerCommande = async (db, id) => {
   return result.rows[0];
 };
 
-// Commande annulée : les articles retournent en stock (si la taille existe encore)
 export const remettreEnStock = (db, commandeId) =>
   db.query(
     `UPDATE stocks s SET quantite = s.quantite + l.quantite

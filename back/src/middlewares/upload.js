@@ -13,7 +13,6 @@ const EXTENSIONS = {
 
 const stockage = multer.diskStorage({
   destination: DOSSIER_UPLOADS,
-  // Nom généré par le serveur : on ne réutilise JAMAIS le nom envoyé par le client
   filename: (req, fichier, rappel) => {
     rappel(null, `${crypto.randomUUID()}${EXTENSIONS[fichier.mimetype]}`);
   },
@@ -21,7 +20,7 @@ const stockage = multer.diskStorage({
 
 export const uploadImage = multer({
   storage: stockage,
-  limits: { fileSize: 2 * 1024 * 1024 }, // 2 Mo maximum
+  limits: { fileSize: 2 * 1024 * 1024 },
   fileFilter: (req, fichier, rappel) => {
     if (EXTENSIONS[fichier.mimetype]) {
       rappel(null, true);

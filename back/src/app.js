@@ -9,12 +9,9 @@ import commandeRoutes from './routes/commande.routes.js';
 import { routeIntrouvable, gestionnaireErreurs } from './middlewares/erreurs.js';
 import { DOSSIER_UPLOADS } from './middlewares/upload.js';
 
-// L'application est créée ici, SANS app.listen() : les tests peuvent ainsi la démarrer eux-mêmes.
 const app = express();
 
 app.disable('x-powered-by');
-// Derrière nginx (Docker), l'adresse du visiteur est dans X-Forwarded-For.
-// On ne fait confiance à cet en-tête que s'il vient de la machine ou du réseau Docker.
 app.set('trust proxy', 'loopback, uniquelocal');
 
 app.use(cors({ origin: process.env.CORS_ORIGIN ?? 'http://localhost:4200' }));

@@ -7,7 +7,6 @@ import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { routes } from './app.routes';
 import { authInterceptor } from './interceptors/auth.interceptor';
 
-// Formats français pour les pipes (prix : 19,99 €)
 registerLocaleData(localeFr);
 
 export const appConfig: ApplicationConfig = {

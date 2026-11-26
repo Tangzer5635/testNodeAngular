@@ -48,7 +48,7 @@ export class AdminCommandes {
   private changerStatut(commande: Commande, statut: StatutCommande) {
     this.erreur.set(null);
     this.commandeService.changerStatut(commande.id, statut).subscribe({
-      next: () => this.charger(), // la commande change d'onglet : on recharge la liste
+      next: () => this.charger(),
       error: err => this.erreur.set(err.error?.message ?? 'Impossible de modifier la commande.'),
     });
   }

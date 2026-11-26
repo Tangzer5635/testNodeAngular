@@ -34,7 +34,6 @@ export class Connexion {
 
     this.auth.connexion(email, motDePasse).subscribe({
       next: () => {
-        // Retour à la page demandée avant la connexion (seulement une page de l'admin)
         const retour = this.route.snapshot.queryParamMap.get('retour');
         this.router.navigateByUrl(retour?.startsWith('/admin') ? retour : '/admin');
       },

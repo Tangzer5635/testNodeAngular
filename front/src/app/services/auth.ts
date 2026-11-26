@@ -6,7 +6,6 @@ import { environment } from '../../environments/environment';
 
 const CLE_JETON = 'jeton';
 
-// Date d'expiration du jeton (en millisecondes), lue dans sa partie centrale (le « payload »)
 const lireExpiration = (jeton: string): number | null => {
   try {
     const contenu = JSON.parse(atob(jeton.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
@@ -47,8 +46,6 @@ export class AuthService {
     this.jeton.set(null);
   }
 
-  // Garde le jeton s'il n'est pas expiré, et programme la déconnexion automatique
-  // au moment exact où il expire (sinon le header afficherait « Administration » trop longtemps).
   private enregistrer(jeton: string): void {
     const expiration = lireExpiration(jeton);
     if (expiration === null || expiration <= Date.now()) {
@@ -61,7 +58,6 @@ export class AuthService {
     clearTimeout(this.minuteur);
     this.minuteur = setTimeout(() => {
       this.deconnexion();
-      // Si on était sur une page d'administration, on la quitte
       if (this.router.url.startsWith('/admin')) {
         this.router.navigate(['/connexion'], { queryParams: { retour: this.router.url } });
       }

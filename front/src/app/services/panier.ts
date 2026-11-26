@@ -10,16 +10,14 @@ export interface LignePanier {
   image: string;
   taille: string;
   quantite: number;
-  stock: number; // stock connu de cette taille (mis à jour par actualiser())
+  stock: number;
 }
 
 const CLE_PANIER = 'panier';
 export const QUANTITE_MAX = 10;
 
-// Quantité maximum possible pour une ligne : 10, ou moins s'il reste moins de pièces
 export const quantiteMaxLigne = (ligne: LignePanier): number => Math.min(QUANTITE_MAX, ligne.stock);
 
-// Une ligne venant du localStorage peut avoir été modifiée à la main : on vérifie sa forme
 const estLigneValide = (l: any): boolean =>
   l !== null && typeof l === 'object' &&
   Number.isInteger(l.vetementId) && typeof l.nom === 'string' && typeof l.prix === 'number' &&
@@ -31,7 +29,6 @@ const lirePanier = (): LignePanier[] => {
     return Array.isArray(contenu)
       ? contenu.filter(estLigneValide).map(l => ({
           ...l,
-          // les paniers enregistrés avant la gestion du stock n'ont pas de « stock »
           stock: Number.isInteger(l.stock) ? l.stock : QUANTITE_MAX,
           quantite: Math.min(l.quantite, QUANTITE_MAX),
         }))
@@ -56,13 +53,11 @@ export class PanierService {
   );
 
   constructor() {
-    // Relancé automatiquement à chaque changement de lignes() : sauvegarde du panier
     effect(() => {
       localStorage.setItem(CLE_PANIER, JSON.stringify(this.lignes()));
     });
   }
 
-  // Quantité déjà dans le panier pour ce vêtement dans cette taille
   quantiteDans(vetementId: number, taille: string): number {
     return this.lignes().find(l => l.vetementId === vetementId && l.taille === taille)?.quantite ?? 0;
   }
@@ -75,7 +70,6 @@ export class PanierService {
     this.lignes.update(lignes => {
       const existante = lignes.find(l => l.vetementId === vetement.id && l.taille === taille);
       if (existante) {
-        // Même vêtement, même taille : on augmente la quantité (sans dépasser le stock)
         return lignes.map(l =>
           l === existante
             ? { ...l, stock, quantite: Math.min(l.quantite + 1, QUANTITE_MAX, stock) }
@@ -115,9 +109,6 @@ export class PanierService {
     this.lignes.set([]);
   }
 
-  // Met le panier à jour avec les vêtements actuels de la boutique (nom, prix, image, stock).
-  // Retire les lignes épuisées ou disparues, réduit les quantités supérieures au stock.
-  // Renvoie un message à afficher, ou null si rien n'a changé d'important.
   synchroniser(vetements: Vetement[]): string | null {
     const parId = new Map(vetements.map(v => [v.id, v]));
     let retirees = 0;
@@ -153,7 +144,6 @@ export class PanierService {
     return messages.length > 0 ? messages.join(' ') : null;
   }
 
-  // Recharge les vêtements depuis l'API puis synchronise. En cas d'erreur réseau, on garde le panier tel quel.
   actualiser(): Observable<string | null> {
     if (this.lignes().length === 0) {
       return of(null);

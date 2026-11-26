@@ -32,12 +32,10 @@ export class FormulaireVetement {
     description: [''],
     prix: [0, [Validators.required, Validators.min(0)]],
     image: [''],
-    // FormArray : une liste de petits formulaires { taille, stock }, un par ligne à l'écran
     tailles: this.fb.nonNullable.array([this.nouvelleTaille()]),
     categorie: ['', Validators.required],
   });
 
-  // Raccourci pour le template : la liste des lignes de taille
   protected get tailles() {
     return this.vetementForm.controls.tailles;
   }
@@ -61,7 +59,6 @@ export class FormulaireVetement {
             image: vetement.image ?? '',
             categorie: vetement.categorie,
           });
-          // patchValue ne sait pas créer de lignes : on vide la liste et on la remplit
           this.tailles.clear();
           vetement.tailles.forEach(t => this.tailles.push(this.nouvelleTaille(t.taille, t.stock)));
           this.nomImage.set(vetement.image ?? '');

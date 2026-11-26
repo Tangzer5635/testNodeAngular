@@ -21,7 +21,8 @@
 
         <div class="infos">
           <a [routerLink]="['/vetements', ligne.vetementId]" class="nom">{{ ligne.nom }}</a>
-          <span>Taille {{ ligne.taille }} · {{ ligne.prix | currency:'EUR' }}</span>
+          <span>Taille {{ ligne.taille }}</span>
+          <span>{{ ligne.prix | currency:'EUR' }} l'unité</span>
           @if (ligne.stock <= 3) {
             <span class="stock-faible">Plus que {{ ligne.stock }} en stock</span>
           }

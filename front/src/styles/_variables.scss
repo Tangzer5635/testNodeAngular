@@ -1,14 +1,156 @@
-$couleur-primaire: #1f2a44;
-$couleur-accent: #e76f51;
-$couleur-fond: #f6f4f1;
-$couleur-carte: #ffffff;
-$couleur-texte: #2b2b2b;
-$couleur-texte-doux: #6b6b6b;
+$blanc: #ffffff;
+$gris-fond: #f5f5f7;
+$encre: #1d1d1f;
+$gris-texte: #6e6e73;
+$gris-discret: #86868b;
+$filet: #d2d2d7;
+$bleu: #0071e3;
+$bleu-survol: #0077ed;
+$lien: #0066cc;
+$orange-stock: #b64400;
+$rouge: #e30000;
+$vert: #008009;
 
-$police: "Segoe UI", Arial, sans-serif;
+$police: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable Text", "Segoe UI",
+  "Helvetica Neue", Helvetica, Arial, sans-serif;
+$police-titre: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI Variable Display",
+  "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
 
-$largeur-max: 1100px;
+$largeur-max: 1080px;
 $espace: 1rem;
-$rayon: 12px;
-$ombre: 0 4px 14px rgba(0, 0, 0, 0.08);
-$transition: 0.2s ease;
+$rayon-carte: 18px;
+$rayon-champ: 12px;
+$rayon-pilule: 980px;
+$hauteur-entete: 52px;
+$transition: 0.3s cubic-bezier(0, 0, 0.5, 1);
+$ecran-moyen: 834px;
+$ecran-petit: 600px;
+
+@mixin titre-page {
+  margin: 0 0 ($espace * 2);
+  font-family: $police-titre;
+  font-size: clamp(2.25rem, 5vw, 3.5rem);
+  font-weight: 600;
+  line-height: 1.07;
+  letter-spacing: -0.02em;
+  color: $encre;
+}
+
+@mixin sous-titre {
+  margin: 0 0 $espace;
+  font-family: $police-titre;
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 1.17;
+  letter-spacing: -0.01em;
+}
+
+@mixin bouton-principal {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0.6rem 1.4rem;
+  border: none;
+  border-radius: $rayon-pilule;
+  background-color: $bleu;
+  color: $blanc;
+  font: inherit;
+  font-size: 1.0625rem;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color $transition;
+
+  &:hover {
+    background-color: $bleu-survol;
+  }
+
+  &:disabled {
+    background-color: $filet;
+    color: $gris-discret;
+    cursor: not-allowed;
+  }
+}
+
+@mixin bouton-secondaire {
+  @include bouton-principal;
+  background-color: $gris-fond;
+  color: $encre;
+
+  &:hover {
+    background-color: #e8e8ed;
+  }
+}
+
+@mixin bouton-lien {
+  padding: 0;
+  border: none;
+  background: none;
+  color: $lien;
+  font: inherit;
+  cursor: pointer;
+
+  &:hover {
+    text-decoration: underline;
+  }
+
+  &:disabled {
+    color: $gris-discret;
+    text-decoration: none;
+    cursor: not-allowed;
+  }
+}
+
+@mixin champ {
+  display: block;
+  width: 100%;
+  min-height: 52px;
+  margin-top: 0.4rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid $gris-discret;
+  border-radius: $rayon-champ;
+  background-color: $blanc;
+  color: $encre;
+  font: inherit;
+  font-size: 1.0625rem;
+  font-weight: 400;
+  transition: border-color $transition, box-shadow $transition;
+
+  &.ng-invalid.ng-touched {
+    border-color: $rouge;
+  }
+
+  &::placeholder {
+    color: $gris-discret;
+  }
+
+  &:focus {
+    outline: none;
+    border-color: $bleu;
+    box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.25);
+  }
+}
+
+@mixin libelle-champ {
+  display: block;
+  margin-top: 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: $encre;
+}
+
+@mixin message-erreur {
+  padding: 0.9rem 1.1rem;
+  border-radius: $rayon-champ;
+  background-color: #fff2f2;
+  color: $rouge;
+}
+
+@mixin message-info {
+  padding: 0.9rem 1.1rem;
+  border-radius: $rayon-champ;
+  background-color: $gris-fond;
+  color: $encre;
+}

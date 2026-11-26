@@ -1,11 +1,3 @@
--- Migration v1.5.0 : stock par taille + commandes
---
--- init.sql n'est exécuté que sur une base VIDE. Pour une base qui existe déjà,
--- on lance ce script une seule fois (il ne refait rien s'il a déjà été lancé) :
---
---   PowerShell : Get-Content db/migrations/v1.5.0-stock-commandes.sql | docker compose exec -T db psql -U postgres -d boutique
---   Linux      : docker compose exec -T db psql -U postgres -d boutique < db/migrations/v1.5.0-stock-commandes.sql
-
 BEGIN;
 
 CREATE TABLE IF NOT EXISTS stocks (
@@ -16,8 +8,6 @@ CREATE TABLE IF NOT EXISTS stocks (
     PRIMARY KEY (vetement_id, taille)
 );
 
--- Les anciennes tailles (colonne vetements.tailles) deviennent des lignes de stock, avec 10 pièces chacune,
--- puis la colonne est supprimée. Le IF évite une erreur si la migration a déjà été faite.
 DO $$
 BEGIN
     IF EXISTS (SELECT 1 FROM information_schema.columns

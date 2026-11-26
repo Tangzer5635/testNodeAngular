@@ -6,7 +6,6 @@ import { NOM_IMAGE, supprimerImage } from './image.service.js';
 
 const estIdValide = (id) => Number.isInteger(id) && id > 0;
 
-// tailles : [{ taille: 'M', stock: 5 }, …] — au moins une, sans doublon
 const validerTailles = (tailles) => {
   if (!Array.isArray(tailles) || tailles.length === 0 || tailles.length > 20) {
     throw new ValidationError('Indique entre 1 et 20 tailles');
@@ -26,7 +25,6 @@ const validerTailles = (tailles) => {
   }
 };
 
-// Ne garde que les champs attendus, nettoyés
 const normaliser = (data) => ({
   ...data,
   tailles: data.tailles.map(t => ({ taille: t.taille.trim(), stock: t.stock })),
@@ -71,7 +69,6 @@ export const getVetements = async ({ categorie, recherche, tri } = {}) => {
   });
 };
 
-// Lève NotFoundError (404) si l'id n'est pas valide ou si le vêtement n'existe pas
 const trouverVetement = async (id) => {
   const vetement = estIdValide(id) ? await vetementRepository.findById(id) : undefined;
   if (!vetement) {
@@ -95,7 +92,6 @@ export const updateVetement = async (id, data) => {
   if (lignesModifiees === 0) {
     throw new NotFoundError(`Aucun vêtement avec l'id ${id}`);
   }
-  // L'image a été remplacée ou retirée : l'ancien fichier ne sert plus
   if (ancien.image && ancien.image !== data.image) {
     await supprimerImage(ancien.image);
   }

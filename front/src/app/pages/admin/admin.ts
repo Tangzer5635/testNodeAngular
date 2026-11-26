@@ -23,7 +23,6 @@ export class Admin {
     });
   }
 
-  // Détail au survol de la cellule : « S : 8 · M : 15 · L : 12 »
   protected tailles(vetement: Vetement): string {
     return vetement.tailles.map(t => `${t.taille} : ${t.stock}`).join(' · ');
   }

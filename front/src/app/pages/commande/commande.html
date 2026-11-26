@@ -2,7 +2,6 @@
   <div class="carte merci">
     <h1>Merci {{ c.nom }} !</h1>
     <p>Ta commande <strong>n°{{ c.id }}</strong> de <strong>{{ c.total | currency:'EUR' }}</strong> est bien enregistrée.</p>
-    <p>Garde ce numéro : il te sera demandé pour toute question sur ta commande.</p>
     <a routerLink="/" class="bouton">Continuer mes achats</a>
   </div>
 } @else if (panier.lignes().length === 0) {
@@ -50,7 +49,7 @@
       }
 
       <button type="submit" class="bouton" [disabled]="enCours()">
-        {{ enCours() ? 'Validation…' : 'Valider la commande · ' + (panier.total() | currency:'EUR') }}
+        {{ enCours() ? 'Validation…' : 'Valider la commande de ' + (panier.total() | currency:'EUR') }}
       </button>
     </form>
 

@@ -27,7 +27,6 @@ export class Catalogue {
   protected imagesUrl = environment.imagesUrl;
   protected stockTotal = stockTotal;
 
-  // Filtres actuels, recopiés depuis l'URL (pour savoir quoi mettre en évidence)
   protected categorie = signal<string | null>(null);
   protected tri = signal('recent');
   protected recherche = new FormControl('', { nonNullable: true });
@@ -45,7 +44,6 @@ export class Catalogue {
       error: () => this.categories.set([]),
     });
 
-    // 1. L'URL change → on recharge les vêtements avec les filtres de l'URL
     this.route.queryParamMap.pipe(
       switchMap(params => {
         const filtres = {
@@ -56,13 +54,10 @@ export class Catalogue {
 
         this.categorie.set(filtres.categorie ?? null);
         this.tri.set(filtres.tri ?? 'recent');
-        // emitEvent: false → ne pas déclencher valueChanges (sinon : boucle URL ↔ champ)
         this.recherche.setValue(filtres.recherche ?? '', { emitEvent: false });
         this.erreur.set(null);
 
-        // switchMap annule la requête précédente si les filtres changent avant sa réponse
         return this.vetementService.getAll(filtres).pipe(
-          // catchError ICI (et pas plus bas) : une erreur ne doit pas arrêter l'écoute de l'URL
           catchError(() => {
             this.erreur.set('Impossible de charger le catalogue.');
             return of([]);
@@ -74,7 +69,6 @@ export class Catalogue {
       this.chargement.set(false);
     });
 
-    // 2. L'utilisateur tape dans la recherche → on met à jour l'URL quand il s'arrête de taper
     this.recherche.valueChanges.pipe(
       debounceTime(300),
       distinctUntilChanged(),
@@ -86,7 +80,6 @@ export class Catalogue {
   }
 
   protected changerTri(tri: string) {
-    // « recent » est le tri par défaut : inutile de l'écrire dans l'URL
     this.appliquerFiltres({ tri: tri === 'recent' ? null : tri });
   }
 
@@ -94,7 +87,6 @@ export class Catalogue {
     this.appliquerFiltres({ categorie: null, recherche: null, tri: null });
   }
 
-  // Modifie seulement les paramètres de l'URL (null = supprimer le paramètre)
   private appliquerFiltres(changements: Record<string, string | null>) {
     this.router.navigate([], { queryParams: changements, queryParamsHandling: 'merge' });
   }

@@ -1,4 +1,3 @@
-
 CREATE TABLE IF NOT EXISTS categories (
     id  INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     nom TEXT NOT NULL UNIQUE
@@ -13,8 +12,6 @@ CREATE TABLE IF NOT EXISTS vetements (
     categorie_id INT NOT NULL REFERENCES categories (id)
 );
 
--- Stock de chaque taille d'un vêtement (une ligne par taille).
--- « ordre » garde l'ordre d'affichage (S, M, L, XL) ; ON DELETE CASCADE : supprimer un vêtement supprime ses stocks.
 CREATE TABLE IF NOT EXISTS stocks (
     vetement_id INT  NOT NULL REFERENCES vetements (id) ON DELETE CASCADE,
     taille      TEXT NOT NULL,
@@ -33,8 +30,6 @@ CREATE TABLE IF NOT EXISTS commandes (
     cree_le    TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- Le nom et le prix sont RECOPIÉS au moment de la commande :
--- si le vêtement change de prix ou est supprimé plus tard, la commande reste juste.
 CREATE TABLE IF NOT EXISTS lignes_commande (
     id            INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     commande_id   INT NOT NULL REFERENCES commandes (id) ON DELETE CASCADE,
@@ -57,8 +52,6 @@ INSERT INTO categories (nom) VALUES
     ('vestes'),
     ('sweats');
 
--- categorie_id est retrouvé d'après le nom de la catégorie (sous-requête),
--- pour ne pas dépendre des ids générés.
 INSERT INTO vetements (nom, description, prix, image, categorie_id) VALUES
     ('T-shirt blanc classique',
      'T-shirt blanc en coton, confortable et facile à porter au quotidien.',
@@ -100,8 +93,6 @@ INSERT INTO vetements (nom, description, prix, image, categorie_id) VALUES
      44.99, 'sweat-beige.jpg',
      (SELECT id FROM categories WHERE nom = 'sweats'));
 
--- Stocks de départ : pour chaque vêtement, ses tailles et la quantité de chacune.
--- unnest(...) WITH ORDINALITY transforme les deux listes en lignes (taille, quantité, position).
 INSERT INTO stocks (vetement_id, taille, quantite, ordre)
 SELECT v.id, s.taille, s.quantite, s.ordre
 FROM vetements v

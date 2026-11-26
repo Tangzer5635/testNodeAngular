@@ -17,7 +17,6 @@ export class Panier {
   protected information = signal<string | null>(null);
 
   constructor() {
-    // Le panier est stocké dans le navigateur : prix, stocks et articles ont pu changer depuis
     this.panier.actualiser().subscribe(message => this.information.set(message));
   }
 

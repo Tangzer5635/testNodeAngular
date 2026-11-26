@@ -1,6 +1,5 @@
 import pool, { transaction } from '../config/db.js';
 
-// « tailles » est construit par PostgreSQL : [{ "taille": "M", "stock": 5 }, …] dans l'ordre d'affichage
 const SELECT_VETEMENTS = `
   SELECT v.id, v.nom, v.prix::float AS prix, v.description, v.image, c.nom AS categorie,
     COALESCE(
@@ -45,8 +44,6 @@ export const findById = async (id) => {
   return result.rows[0];
 };
 
-// Enregistre les tailles d'un vêtement : unnest() transforme les deux listes en lignes,
-// WITH ORDINALITY ajoute leur position (pour garder l'ordre S, M, L, XL)
 const enregistrerStocks = (db, vetementId, tailles) =>
   db.query(
     `INSERT INTO stocks (vetement_id, taille, quantite, ordre)
@@ -55,7 +52,6 @@ const enregistrerStocks = (db, vetementId, tailles) =>
     [vetementId, tailles.map(t => t.taille), tailles.map(t => t.stock)]
   );
 
-// Le vêtement et ses stocks sont enregistrés ensemble : si une requête échoue, rien n'est gardé
 export const create = (vetement) =>
   transaction(async (db) => {
     const { nom, prix, description, image, tailles, categorie } = vetement;
@@ -81,14 +77,12 @@ export const update = (id, vetement) =>
     if (result.rowCount === 0) {
       return 0;
     }
-    // Plus simple que de comparer l'ancienne et la nouvelle liste : on remplace toutes les tailles
     await db.query('DELETE FROM stocks WHERE vetement_id = $1', [id]);
     await enregistrerStocks(db, id, tailles);
     return result.rowCount;
   });
 
 export const remove = async (id) => {
-  // Les stocks sont supprimés automatiquement (ON DELETE CASCADE)
   const result = await pool.query('DELETE FROM vetements WHERE id = $1', [id]);
   return result.rowCount;
 };

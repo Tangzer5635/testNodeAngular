@@ -3,68 +3,76 @@
 :host {
   display: flex;
   flex-direction: column;
-  min-height: 100vh; // le footer reste en bas même si la page est courte
+  min-height: 100vh;
 }
 
 header {
-  background-color: v.$couleur-primaire;
-  padding: v.$espace (v.$espace * 2);
+  position: sticky;
+  top: 0;
+  z-index: 10;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  flex-wrap: wrap;
   gap: v.$espace;
-
-  a {
-    color: white;
-    text-decoration: none;
-    transition: color v.$transition;
-
-    &:hover {
-      color: v.$couleur-accent;
-    }
-  }
+  height: v.$hauteur-entete;
+  padding: 0 max(1.25rem, calc((100% - #{v.$largeur-max}) / 2));
+  background-color: rgba(251, 251, 253, 0.8);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
 
   .logo {
-    font-size: 1.5rem;
-    font-weight: 700;
-    letter-spacing: 1px;
+    font-family: v.$police-titre;
+    font-size: 1.3rem;
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    color: v.$encre;
+    text-decoration: none;
   }
 
   nav {
     display: flex;
-    gap: v.$espace * 1.5;
-    font-weight: 600;
+    align-items: center;
+    gap: 1.75rem;
+    font-size: 0.875rem;
 
+    a,
     button {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
       padding: 0;
       border: none;
       background: none;
-      color: white;
+      color: v.$encre;
       font: inherit;
+      text-decoration: none;
+      opacity: 0.8;
       cursor: pointer;
-      transition: color v.$transition;
+      transition: opacity v.$transition;
 
       &:hover {
-        color: v.$couleur-accent;
+        opacity: 1;
       }
     }
 
     .actif {
-      color: v.$couleur-accent;
-      border-bottom: 2px solid v.$couleur-accent;
+      opacity: 1;
+      font-weight: 600;
     }
 
     .badge {
-      display: inline-block;
-      min-width: 1.4rem;
-      margin-left: v.$espace * 0.25;
-      padding: 0 (v.$espace * 0.35);
-      border-radius: 999px;
-      background-color: v.$couleur-accent;
-      color: white;
-      font-size: 0.8rem;
-      text-align: center;
+      display: inline-grid;
+      place-items: center;
+      min-width: 1.15rem;
+      height: 1.15rem;
+      padding: 0 0.3rem;
+      border-radius: v.$rayon-pilule;
+      background-color: v.$encre;
+      color: v.$blanc;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      letter-spacing: 0;
     }
   }
 }
@@ -74,17 +82,45 @@ main {
   width: 100%;
   max-width: v.$largeur-max;
   margin: 0 auto;
-  padding: (v.$espace * 2) v.$espace;
+  padding: (v.$espace * 3.5) 1.25rem (v.$espace * 5);
 }
 
 footer {
-  background-color: v.$couleur-primaire;
-  color: rgba(255, 255, 255, 0.7);
-  text-align: center;
-  padding: v.$espace;
-  font-size: 0.9rem;
+  padding: 1.25rem max(1.25rem, calc((100% - #{v.$largeur-max}) / 2));
+  background-color: v.$gris-fond;
+  border-top: 1px solid v.$filet;
+  color: v.$gris-texte;
+  font-size: 0.75rem;
 
   p {
     margin: 0;
+  }
+}
+
+@media (max-width: v.$ecran-petit) {
+  header {
+    flex-wrap: wrap;
+    row-gap: 0.35rem;
+    height: auto;
+    min-height: v.$hauteur-entete;
+    padding-block: 0.7rem;
+
+    .logo {
+      font-size: 1.1rem;
+    }
+
+    nav {
+      flex-wrap: wrap;
+      gap: 0.35rem 1rem;
+      font-size: 0.8125rem;
+
+      > a:first-child {
+        display: none;
+      }
+    }
+  }
+
+  main {
+    padding-top: v.$espace * 2;
   }
 }

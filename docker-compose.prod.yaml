@@ -1,10 +1,3 @@
-# Lancer la boutique SANS compiler : avec les images publiées par la CI/CD sur ghcr.io
-#
-#   docker login ghcr.io -u Tangzer5635        (mot de passe : un jeton GitHub avec le droit read:packages)
-#   docker compose -f docker-compose.prod.yaml up -d
-#
-# Version : VERSION=1.4.0 docker compose -f docker-compose.prod.yaml up -d   (par défaut : latest)
-# Variables lues dans le fichier .env (comme docker-compose.yaml)
 services:
   db:
     image: postgres:17

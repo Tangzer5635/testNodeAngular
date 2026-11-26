@@ -13,6 +13,5 @@ export interface Vetement {
   categorie: string;
 }
 
-// Nombre total de pièces disponibles, toutes tailles confondues
 export const stockTotal = (vetement: Vetement): number =>
   vetement.tailles.reduce((somme, t) => somme + t.stock, 0);
