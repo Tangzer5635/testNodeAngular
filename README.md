@@ -1,5 +1,7 @@
 # Boutique de vêtements — Node.js / Express / PostgreSQL / Angular
 
+[![CI/CD](https://github.com/Tangzer5635/testNodeAngular/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/Tangzer5635/testNodeAngular/actions/workflows/ci-cd.yml)
+
 Site vitrine de vente de vêtements, avec une partie administration protégée par connexion (CRUD complet).
 
 | Dossier | Contenu |
@@ -96,6 +98,31 @@ La session se termine automatiquement à l'expiration du jeton (2 h). L'API vér
 ```bash
 cd back && npm test                     # API : sécurité et erreurs (sans base de données)
 cd front && npx ng test --watch=false   # Angular : panier, guards, header
+```
+
+## CI/CD (GitHub Actions)
+
+Fichier : `.github/workflows/ci-cd.yml`. Résultats dans l'onglet **Actions** du dépôt (ou `gh run list`).
+
+| Quand | Ce qui est lancé |
+|---|---|
+| push sur `main`, pull request | tests du back, tests + build du front, build des 2 images Docker |
+| push d'un tag `v*` | tout ce qui précède, **puis** publication des images sur ghcr.io et création de la release |
+
+Les images ne sont publiées que si **tous** les tests passent.
+
+Publier une nouvelle version :
+
+```bash
+git tag -a v1.4.0 -m "v1.4.0 – Titre de la version"   # le message devient le titre de la release
+git push origin v1.4.0
+```
+
+Lancer la boutique avec les images publiées, sans rien compiler (il faut `.env` et `db/init.sql`) :
+
+```bash
+docker login ghcr.io -u Tangzer5635      # mot de passe : jeton GitHub avec le droit read:packages
+docker compose -f docker-compose.prod.yaml up -d
 ```
 
 ## Repartir d'une base neuve
