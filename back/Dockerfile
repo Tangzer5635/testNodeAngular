@@ -10,6 +10,9 @@ RUN npm ci --omit=dev
 # 2. Puis le code
 COPY . .
 
+# Dossier des uploads, appartenant à l'utilisateur node
+RUN mkdir -p uploads && chown node:node uploads
+
 # Ne pas faire tourner l'application en root
 USER node
 

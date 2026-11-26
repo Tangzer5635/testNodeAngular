@@ -1,10 +1,29 @@
 <h1>Catalogue</h1>
 
+<div class="filtres">
+  <div class="categories">
+    <button type="button" [class.actif]="categorie() === null" (click)="choisirCategorie(null)">Tout</button>
+    @for (cat of categories(); track cat) {
+      <button type="button" [class.actif]="categorie() === cat" (click)="choisirCategorie(cat)">{{ cat }}</button>
+    }
+  </div>
+
+  <div class="outils">
+    <input type="search" [formControl]="recherche" placeholder="Rechercher un article…" />
+    <select #choixTri (change)="changerTri(choixTri.value)">
+      @for (option of tris; track option.valeur) {
+        <option [value]="option.valeur" [selected]="option.valeur === tri()">{{ option.libelle }}</option>
+      }
+    </select>
+  </div>
+</div>
+
 @if (erreur()) {
   <p class="erreur">{{ erreur() }}</p>
 } @else if (chargement()) {
   <p>Chargement…</p>
 } @else {
+  <p class="compteur">{{ vetements().length }} article{{ vetements().length > 1 ? 's' : '' }}</p>
   <ul>
     @for (vetement of vetements(); track vetement.id) {
       <li>
@@ -18,7 +37,10 @@
         <p>{{ vetement.prix | currency:'EUR' }}</p>
       </li>
     } @empty {
-      <li>Aucun article disponible</li>
+      <li class="vide">
+        <p>Aucun article ne correspond à ces filtres.</p>
+        <button type="button" (click)="reinitialiser()">Réinitialiser les filtres</button>
+      </li>
     }
   </ul>
 }

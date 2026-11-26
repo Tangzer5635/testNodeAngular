@@ -1,16 +1,34 @@
 import pool from "../config/db.js";
 
 const SELECT_VETEMENTS = "SELECT v.id, v.nom, v.prix::Float, v.description, v.image, v.tailles, c.nom AS categorie FROM vetements v JOIN categories c ON v.categorie_id = c.id";
-
-export const findAll = async () => {
-    const result = await pool.query(SELECT_VETEMENTS+" ORDER BY v.id");
-    return result.rows;
+export const TRIS = {
+  recent: 'v.id DESC',
+  prix_asc: 'v.prix ASC',
+  prix_desc: 'v.prix DESC',
+  nom: 'v.nom ASC',
 };
 
-export const findAllByCategorie = async (categorie) => {
-    const result = await pool.query(SELECT_VETEMENTS+" WHERE c.nom = $1 ORDER BY v.id", [categorie]);
-    return result.rows;
-}
+export const findAll = async ({ categorie, recherche, tri = 'recent' } = {}) => {
+  const conditions = [];
+  const valeurs = [];
+
+  if (categorie) {
+    valeurs.push(categorie);
+    conditions.push(`c.nom = $${valeurs.length}`);
+  }
+
+  if (recherche) {
+    valeurs.push(`%${recherche}%`);
+    const n = valeurs.length;
+    conditions.push(`(v.nom ILIKE $${n} OR v.description ILIKE $${n})`);
+  }
+
+  const where = conditions.length > 0 ? ` WHERE ${conditions.join(' AND ')}` : '';
+  const query = `${SELECT_VETEMENTS}${where} ORDER BY ${TRIS[tri]}`;
+
+  const result = await pool.query(query, valeurs);
+  return result.rows;
+};
 
 export const findById = async (id) => {
     const result = await pool.query(SELECT_VETEMENTS+" WHERE v.id = $1", [id]);

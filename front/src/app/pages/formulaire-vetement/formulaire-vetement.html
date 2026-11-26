@@ -30,10 +30,20 @@
     <small>Le prix doit être un nombre positif.</small>
   }
 
-  <label>
-    Image (nom du fichier)
-    <input type="text" formControlName="image" placeholder="veste-jean.jpg" />
-  </label>
+  <div class="champ-image">
+  <span class="libelle">Image</span>
+  @if (nomImage()) {
+    <img [src]="imagesUrl + '/' + nomImage()" alt="Aperçu de l'image" class="apercu" />
+    <button type="button" class="lien" (click)="retirerImage()">Retirer l'image</button>
+  }
+  <input type="file" accept="image/jpeg,image/png,image/webp" (change)="choisirImage($event)" [disabled]="envoiEnCours()" />
+  @if (envoiEnCours()) {
+    <small class="info">Envoi de l'image…</small>
+  }
+  @if (erreurImage()) {
+    <small>{{ erreurImage() }}</small>
+  }
+</div>
 
   <label>
     Tailles (séparées par des virgules)
@@ -57,7 +67,7 @@
   }
 
   <div class="boutons">
-    <button type="submit" [disabled]="vetementForm.invalid">Enregistrer</button>
+    <button type="submit" [disabled]="vetementForm.invalid || envoiEnCours()">Enregistrer</button>
     <a routerLink="/admin">Annuler</a>
   </div>
 </form>

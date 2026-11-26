@@ -3,6 +3,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { VetementService } from '../../services/vetement';
 import { CategorieService } from '../../services/categorie';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-formulaire-vetement',
@@ -20,6 +21,11 @@ export class FormulaireVetement {
   protected categories = signal<string[]>([]);
   protected erreur = signal<string | null>(null);
   protected id = signal<number | null>(null);
+
+  protected imagesUrl = environment.imagesUrl;
+  protected nomImage = signal('');
+  protected envoiEnCours = signal(false);
+  protected erreurImage = signal<string | null>(null);
 
   protected vetementForm = this.fb.nonNullable.group({
     nom: ['', Validators.required],
@@ -41,14 +47,17 @@ export class FormulaireVetement {
       const id = Number(idParam);
       this.id.set(id);
       this.vetementService.getById(id).subscribe({
-        next: vetement => this.vetementForm.patchValue({
-          nom: vetement.nom,
-          description: vetement.description ?? '',
-          prix: vetement.prix,
-          image: vetement.image ?? '',
-          tailles: vetement.tailles.join(', '),
-          categorie: vetement.categorie,
-        }),
+        next: vetement => {
+          this.vetementForm.patchValue({
+            nom: vetement.nom,
+            description: vetement.description ?? '',
+            prix: vetement.prix,
+            image: vetement.image ?? '',
+            tailles: vetement.tailles.join(', '),
+            categorie: vetement.categorie,
+          });
+          this.nomImage.set(vetement.image ?? '');
+        },
         error: err => this.erreur.set(
           err.status === 404 ? "Ce vêtement n'existe pas." : 'Impossible de charger ce vêtement.'
         ),
@@ -83,4 +92,37 @@ export class FormulaireVetement {
       error: err => this.erreur.set(err.error?.message ?? "Impossible d'enregistrer le vêtement."),
     });
   }
+
+protected choisirImage(event: Event) {
+  const champ = event.target as HTMLInputElement;
+  const fichier = champ.files?.[0];
+  if (!fichier) {
+    return;
+  }
+  if (fichier.size > 2 * 1024 * 1024) {
+    this.erreurImage.set('Image trop lourde (2 Mo maximum).');
+    champ.value = '';
+    return;
+  }
+
+  this.erreurImage.set(null);
+  this.envoiEnCours.set(true);
+  this.vetementService.envoyerImage(fichier).subscribe({
+    next: reponse => {
+      this.vetementForm.controls.image.setValue(reponse.image);
+      this.nomImage.set(reponse.image);
+      this.envoiEnCours.set(false);
+    },
+    error: err => {
+      this.erreurImage.set(err.error?.message ?? "Impossible d'envoyer l'image.");
+      this.envoiEnCours.set(false);
+      champ.value = '';
+    },
+  });
+}
+
+protected retirerImage() {
+  this.vetementForm.controls.image.setValue('');
+  this.nomImage.set('');
+}
 }

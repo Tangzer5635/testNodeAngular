@@ -31,9 +31,11 @@ services:
       JWT_SECRET: ${JWT_SECRET:?Définis JWT_SECRET dans le fichier .env à la racine du projet}
       JWT_EXPIRES_IN: 2h
       CORS_ORIGIN: http://localhost:8080
+    volumes:
+      - uploads:/app/uploads # pour que les images envoyées par l'admin soient persistantes
     depends_on:
       db:
-        condition: service_healthy # attend que Postgres accepte les connexions
+        condition: service_healthy # attend que Postgres accepte les connexions  condition: service_healthy # attend que Postgres accepte les connexions
 
   front:
     build: ./front
@@ -45,3 +47,4 @@ services:
 
 volumes:
   db_data:
+  uploads:

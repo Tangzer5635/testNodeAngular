@@ -1,8 +1,14 @@
 import { inject, Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Vetement } from '../models/vetement';
 import { environment } from '../../environments/environment';
+
+export interface FiltresVetements {
+  categorie?: string;
+  recherche?: string;
+  tri?: string;
+}
 
 @Injectable({
   providedIn: 'root',
@@ -11,9 +17,15 @@ export class VetementService {
   private http = inject(HttpClient);
   private apiUrl = `${environment.apiUrl}/vetements`;
 
-  getAll(): Observable<Vetement[]> {
-    return this.http.get<Vetement[]>(this.apiUrl);
+  getAll(filtres: FiltresVetements = {}): Observable<Vetement[]> {
+  let params = new HttpParams();
+  for (const [cle, valeur] of Object.entries(filtres)) {
+    if (valeur) {
+      params = params.set(cle, valeur);
+    }
   }
+  return this.http.get<Vetement[]>(this.apiUrl, { params });
+}
 
   getById(id: number): Observable<Vetement> {
     return this.http.get<Vetement>(`${this.apiUrl}/${id}`);
@@ -29,5 +41,11 @@ export class VetementService {
 
   delete(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
+  }
+
+  envoyerImage(fichier: File): Observable<{ image: string }> {
+    const donnees = new FormData();
+    donnees.append('image', fichier);
+    return this.http.post<{ image: string }>(`${environment.apiUrl}/images`, donnees);
   }
 }

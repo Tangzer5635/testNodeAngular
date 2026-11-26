@@ -1,5 +1,75 @@
 @use "../../../styles/variables" as v;
 
+// ---------- Filtres ----------
+.filtres {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: v.$espace;
+  margin-bottom: v.$espace;
+}
+
+.categories {
+  display: flex;
+  flex-wrap: wrap;
+  gap: v.$espace * 0.5;
+
+  button {
+    padding: (v.$espace * 0.4) v.$espace;
+    border: 1px solid v.$couleur-primaire;
+    border-radius: 999px; // pilule
+    background-color: transparent;
+    color: v.$couleur-primaire;
+    font: inherit;
+    cursor: pointer;
+    text-transform: capitalize;
+    transition: background-color v.$transition, color v.$transition;
+
+    &:hover,
+    &.actif {
+      background-color: v.$couleur-primaire;
+      color: white;
+    }
+  }
+}
+
+.outils {
+  display: flex;
+  gap: v.$espace * 0.5;
+
+  input,
+  select {
+    padding: (v.$espace * 0.45) (v.$espace * 0.7);
+    border: 1px solid #d0d0d0;
+    border-radius: v.$rayon * 0.5;
+    font: inherit;
+    background-color: white;
+
+    &:focus {
+      outline: 2px solid v.$couleur-accent;
+      border-color: transparent;
+    }
+  }
+
+  input {
+    min-width: 220px;
+  }
+}
+
+.compteur {
+  color: v.$couleur-texte-doux;
+  margin: 0 0 v.$espace;
+}
+
+.erreur {
+  padding: v.$espace;
+  background-color: #fdecea;
+  color: #b3261e;
+  border-radius: v.$rayon;
+}
+
+// ---------- Grille de cartes ----------
 ul {
   list-style: none;
   padding: 0;
@@ -48,6 +118,7 @@ li {
     font-size: 1.1rem;
   }
 }
+
 .vignette {
   display: block;
   margin-bottom: v.$espace * 0.75;
@@ -61,9 +132,25 @@ li {
   }
 }
 
-.erreur {
-  padding: v.$espace;
-  background-color: #fdecea;
-  color: #b3261e;
-  border-radius: v.$rayon;
+// Message « aucun résultat » : une seule case sur toute la largeur, sans effet de survol
+li.vide {
+  grid-column: 1 / -1;
+  text-align: center;
+
+  &:hover {
+    transform: none;
+    box-shadow: v.$ombre;
+  }
+
+  button {
+    margin-top: v.$espace * 0.5;
+    padding: (v.$espace * 0.5) v.$espace;
+    border: none;
+    border-radius: v.$rayon;
+    background-color: v.$couleur-accent;
+    color: white;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+  }
 }

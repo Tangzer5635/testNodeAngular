@@ -1,6 +1,7 @@
 import { ValidationError } from '../errors/ValidationError.js';
 import { NotFoundError } from '../errors/NotFoundError.js';
 import { UnauthorizedError } from '../errors/UnauthorizedError.js';
+import multer from 'multer';
 
 export const routeIntrouvable = (req, res) => {
   res.status(404).json({ message: `Route introuvable : ${req.method} ${req.originalUrl}` });
@@ -9,6 +10,10 @@ export const routeIntrouvable = (req, res) => {
 export const gestionnaireErreurs = (error, req, res, next) => {
   if (error.type === 'entity.parse.failed') {
     return res.status(400).json({ message: "Le corps de la requête n'est pas un JSON valide" });
+  }
+  if (error instanceof multer.MulterError) {
+    const message = error.code === 'LIMIT_FILE_SIZE' ? 'Image trop lourde (2 Mo maximum)' : "Envoi de l'image invalide";
+    return res.status(400).json({ message });
   }
   if (error instanceof ValidationError) {
     return res.status(400).json({ message: error.message });

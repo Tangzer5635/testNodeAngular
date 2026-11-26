@@ -30,11 +30,19 @@ const validerVetement = async (data) => {
   }
 };
 
-export const getVetements = async (categorie) => {
-  if (!categorie) {
-    return vetementRepository.findAll();
+export const getVetements = async ({ categorie, recherche, tri } = {}) => {
+  const triChoisi = tri ?? 'recent';
+  if (!Object.hasOwn(vetementRepository.TRIS, triChoisi)) {
+    throw new ValidationError(
+      `Tri inconnu : ${triChoisi}. Valeurs acceptées : ${Object.keys(vetementRepository.TRIS).join(', ')}`
+    );
   }
-  return vetementRepository.findAllByCategorie(categorie);
+  const texte = typeof recherche === 'string' ? recherche.trim() : '';
+  return vetementRepository.findAll({
+    categorie,
+    recherche: texte || undefined,
+    tri: triChoisi,
+  });
 };
 
 export const getVetementById = async (id) => {

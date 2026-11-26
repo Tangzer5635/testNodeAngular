@@ -4,7 +4,8 @@ import * as vetementService from '../services/vetement.service.js';
 // est transmise automatiquement au gestionnaire d'erreurs global (src/middlewares/erreurs.js).
 
 export const getAll = async (req, res) => {
-  const vetements = await vetementService.getVetements(req.query.categorie);
+  const { categorie, recherche, tri } = req.query;
+  const vetements = await vetementService.getVetements({ categorie, recherche, tri });
   res.json(vetements);
 };
 

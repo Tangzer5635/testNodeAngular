@@ -77,3 +77,44 @@ small {
     font-weight: 600;
   }
 }
+
+// ---------- Image ----------
+.champ-image {
+  margin-top: v.$espace;
+
+  .libelle {
+    display: block;
+    font-weight: 600;
+  }
+
+  .apercu {
+    display: block;
+    width: 160px;
+    aspect-ratio: 1;
+    object-fit: cover;
+    margin-top: v.$espace * 0.35;
+    border-radius: v.$rayon;
+    box-shadow: v.$ombre;
+  }
+
+  input[type="file"] {
+    padding: v.$espace * 0.45;
+    background-color: v.$couleur-fond;
+    cursor: pointer;
+  }
+
+  small.info {
+    color: v.$couleur-texte-doux;
+  }
+
+  .lien {
+    margin-top: v.$espace * 0.35;
+    padding: 0;
+    border: none;
+    background: none;
+    color: #b3261e;
+    font: inherit;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+}
