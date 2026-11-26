@@ -1,1 +1,15 @@
-<router-outlet />
+<header>
+  <a routerLink="/" class="logo">{{ nomBoutique }}</a>
+  <nav>
+    <a routerLink="/" routerLinkActive="actif" [routerLinkActiveOptions]="{ exact: true }">Catalogue</a>
+    <a routerLink="/admin" routerLinkActive="actif">Administration</a>
+  </nav>
+</header>
+
+<main>
+  <router-outlet />
+</main>
+
+<footer>
+  <p>&copy; {{ annee }} - {{ nomBoutique }}</p>
+</footer>

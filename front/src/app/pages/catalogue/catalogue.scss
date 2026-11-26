@@ -1,0 +1,50 @@
+@use "../../../styles/variables" as v;
+
+ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: v.$espace * 1.5;
+}
+
+li {
+  background-color: v.$couleur-carte;
+  border-radius: v.$rayon;
+  box-shadow: v.$ombre;
+  padding: v.$espace * 1.2;
+  transition: transform v.$transition, box-shadow v.$transition;
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.12);
+  }
+
+  h2 {
+    margin: 0 0 (v.$espace * 0.5);
+    font-size: 1.15rem;
+
+    a {
+      color: v.$couleur-primaire;
+      text-decoration: none;
+
+      &:hover {
+        color: v.$couleur-accent;
+      }
+    }
+  }
+
+  p {
+    margin: (v.$espace * 0.25) 0;
+    color: v.$couleur-texte-doux;
+  }
+
+  // le prix est le dernier paragraphe de la carte
+  p:last-child {
+    margin-top: v.$espace * 0.75;
+    color: v.$couleur-accent;
+    font-weight: 700;
+    font-size: 1.1rem;
+  }
+}
