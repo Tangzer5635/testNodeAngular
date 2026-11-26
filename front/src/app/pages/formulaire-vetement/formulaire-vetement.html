@@ -1,0 +1,63 @@
+@if (id() === null) {
+  <h1>Ajouter un vêtement</h1>
+} @else {
+  <h1>Modifier un vêtement</h1>
+}
+
+@if (erreur()) {
+  <p class="erreur">{{ erreur() }}</p>
+}
+
+<form [formGroup]="vetementForm" (ngSubmit)="enregistrer()">
+  <label>
+    Nom
+    <input type="text" formControlName="nom" />
+  </label>
+  @if (vetementForm.controls.nom.invalid && vetementForm.controls.nom.touched) {
+    <small>Le nom est obligatoire.</small>
+  }
+
+  <label>
+    Description
+    <textarea formControlName="description" rows="3"></textarea>
+  </label>
+
+  <label>
+    Prix (€)
+    <input type="number" formControlName="prix" step="0.01" min="0" />
+  </label>
+  @if (vetementForm.controls.prix.invalid && vetementForm.controls.prix.touched) {
+    <small>Le prix doit être un nombre positif.</small>
+  }
+
+  <label>
+    Image (nom du fichier)
+    <input type="text" formControlName="image" placeholder="veste-jean.jpg" />
+  </label>
+
+  <label>
+    Tailles (séparées par des virgules)
+    <input type="text" formControlName="tailles" placeholder="S, M, L" />
+  </label>
+  @if (vetementForm.controls.tailles.invalid && vetementForm.controls.tailles.touched) {
+    <small>Indique au moins une taille.</small>
+  }
+
+  <label>
+    Catégorie
+    <select formControlName="categorie">
+      <option value="">Choisir une catégorie</option>
+      @for (categorie of categories(); track categorie) {
+        <option [value]="categorie">{{ categorie }}</option>
+      }
+    </select>
+  </label>
+  @if (vetementForm.controls.categorie.invalid && vetementForm.controls.categorie.touched) {
+    <small>Choisis une catégorie.</small>
+  }
+
+  <div class="boutons">
+    <button type="submit" [disabled]="vetementForm.invalid">Enregistrer</button>
+    <a routerLink="/admin">Annuler</a>
+  </div>
+</form>

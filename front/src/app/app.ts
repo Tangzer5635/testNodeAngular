@@ -8,6 +8,6 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
   styleUrl: './app.scss'
 })
 export class App {
-  protected nomBoutique = 'TestExpressNode';
+  protected nomBoutique = 'NodeAngular';
   protected annee = new Date().getFullYear();
 }

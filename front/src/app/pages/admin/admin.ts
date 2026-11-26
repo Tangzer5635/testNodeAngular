@@ -1,45 +1,35 @@
 import { Component, inject, signal } from '@angular/core';
+import { CurrencyPipe } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { VetementService } from '../../services/vetement';
 import { Vetement } from '../../models/vetement';
-import { CurrencyPipe } from '@angular/common';
 
 @Component({
   selector: 'app-admin',
-  imports: [CurrencyPipe],
+  imports: [CurrencyPipe, RouterLink],
   templateUrl: './admin.html',
   styleUrl: './admin.scss',
 })
 export class Admin {
   private vetementService = inject(VetementService);
   protected vetements = signal<Vetement[]>([]);
+  protected erreur = signal<string | null>(null);
 
   constructor() {
-    this.vetementService.getAll().subscribe(data => this.vetements.set(data));
-  }
-
-  editVetement  (id: number, updatedVetement: Vetement) {
-    this.vetementService.update(id, updatedVetement).subscribe({
-      next: (data) => {
-        const updatedVetements = this.vetements().map(vetement =>
-          vetement.id === id ? data : vetement
-        );
-        this.vetements.set(updatedVetements);
-      },
-      error: err => {
-        console.error('Error updating vetement:', err);
-      }
+    this.vetementService.getAll().subscribe({
+      next: data => this.vetements.set(data),
+      error: () => this.erreur.set('Impossible de charger les vêtements.'),
     });
   }
 
-  deleteVetement(id: number) {
-    this.vetementService.delete(id).subscribe({
-      next: () => {
-        const updatedVetements = this.vetements().filter(vetement => vetement.id !== id);
-        this.vetements.set(updatedVetements);
-      },
-      error: err => {
-        console.error('Error deleting vetement:', err);
-      }
-    }); 
+  protected supprimer(vetement: Vetement) {
+    if (!confirm(`Supprimer « ${vetement.nom} » ?`)) {
+      return;
+    }
+    this.erreur.set(null);
+    this.vetementService.delete(vetement.id).subscribe({
+      next: () => this.vetements.update(liste => liste.filter(v => v.id !== vetement.id)),
+      error: () => this.erreur.set(`Impossible de supprimer « ${vetement.nom} ».`),
+    });
   }
 }
