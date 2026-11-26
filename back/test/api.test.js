@@ -229,6 +229,17 @@ test('un statut inconnu est refusé (400)', async () => {
   assert.equal(reponse.status, 400);
 });
 
+test('catalogue : une page invalide est refusée (400)', async () => {
+  assert.equal((await fetch(`${url}/api/vetements?page=0`)).status, 400);
+  assert.equal((await fetch(`${url}/api/vetements?page=abc`)).status, 400);
+  assert.equal((await fetch(`${url}/api/vetements?page=1&parPage=500`)).status, 400);
+});
+
+test('mes commandes : une page invalide est refusée (400)', async () => {
+  const reponse = await fetch(`${url}/api/commandes/miennes?page=-2`, { headers: { Authorization: `Bearer ${jetonDe('client')}` } });
+  assert.equal(reponse.status, 400);
+});
+
 const listeAdmin = (requete) => fetch(`${url}/api/commandes${requete}`, { headers: { Authorization: `Bearer ${jetonValide()}` } });
 
 test('filtre des commandes : une date au mauvais format est refusée (400)', async () => {

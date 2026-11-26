@@ -6,6 +6,11 @@ import {
 } from '../models/commande';
 import { environment } from '../../environments/environment';
 
+export interface PageCommandes {
+  commandes: Commande[];
+  total: number;
+}
+
 const enParametres = (valeurs: object): HttpParams =>
   Object.entries(valeurs).reduce(
     (params, [cle, valeur]) => (valeur === undefined || valeur === null || valeur === '' ? params : params.set(cle, valeur)),
@@ -23,26 +28,28 @@ export class CommandeService {
     return this.http.post<{ id: number; total: number }>(this.apiUrl, commande);
   }
 
-  getAll(filtres: FiltresCommandes = {}): Observable<{ commandes: Commande[]; total: number }> {
-    return this.http
-      .get<Commande[]>(this.apiUrl, { params: enParametres(filtres), observe: 'response' })
-      .pipe(
-        map(reponse => ({
-          commandes: reponse.body ?? [],
-          total: Number(reponse.headers.get('X-Total-Count') ?? reponse.body?.length ?? 0),
-        }))
-      );
+  getAll(filtres: FiltresCommandes = {}): Observable<PageCommandes> {
+    return this.lirePage(this.apiUrl, enParametres(filtres));
   }
 
   getCompteurs(filtres: Pick<FiltresCommandes, 'recherche' | 'du' | 'au'> = {}): Observable<CompteursCommandes> {
     return this.http.get<CompteursCommandes>(`${this.apiUrl}/compteurs`, { params: enParametres(filtres) });
   }
 
-  getMiennes(): Observable<Commande[]> {
-    return this.http.get<Commande[]>(`${this.apiUrl}/miennes`);
+  getMiennes(page = 1): Observable<PageCommandes> {
+    return this.lirePage(`${this.apiUrl}/miennes`, enParametres({ page }));
   }
 
   changerStatut(id: number, statut: StatutCommande): Observable<Commande> {
     return this.http.patch<Commande>(`${this.apiUrl}/${id}`, { statut });
+  }
+
+  private lirePage(url: string, params: HttpParams): Observable<PageCommandes> {
+    return this.http.get<Commande[]>(url, { params, observe: 'response' }).pipe(
+      map(reponse => ({
+        commandes: reponse.body ?? [],
+        total: Number(reponse.headers.get('X-Total-Count') ?? reponse.body?.length ?? 0),
+      }))
+    );
   }
 }

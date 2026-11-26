@@ -132,6 +132,24 @@ describe('API avec une vraie base de données', { skip: actif ? false : 'base de
       assert.deepEqual(body.map(v => v.nom), ['Sweat à capuche gris']);
     });
 
+    test('le catalogue se découpe en pages avec le total dans X-Total-Count', async () => {
+      const tout = await appeler('GET', '/api/vetements?tri=nom');
+      const lire = (page) => fetch(`${url}/api/vetements?tri=nom&parPage=2&page=${page}`, { headers: { 'X-Forwarded-For': '10.9.9.3' } });
+      const page1 = await lire(1);
+      const page2 = await lire(2);
+      assert.equal(Number(page1.headers.get('x-total-count')), tout.body.length);
+      const ids = [...(await page1.json()), ...(await page2.json())].map(v => v.id);
+      assert.deepEqual(ids, tout.body.slice(0, 4).map(v => v.id));
+      const loin = await lire(999);
+      assert.deepEqual(await loin.json(), []);
+    });
+
+    test('le total du catalogue suit les filtres', async () => {
+      const reponse = await fetch(`${url}/api/vetements?categorie=vestes&page=1`, { headers: { 'X-Forwarded-For': '10.9.9.3' } });
+      const vestes = await appeler('GET', '/api/vetements?categorie=vestes');
+      assert.equal(Number(reponse.headers.get('x-total-count')), vestes.body.length);
+    });
+
     test('une recherche sans résultat renvoie une liste vide', async () => {
       const { status, body } = await appeler('GET', '/api/vetements?recherche=chapeau');
       assert.equal(status, 200);
@@ -399,6 +417,28 @@ describe('API avec une vraie base de données', { skip: actif ? false : 'base de
       });
       const miennes = await appeler('GET', '/api/commandes/miennes', { jeton: body.token });
       assert.deepEqual(miennes.body, []);
+    });
+
+    test('les commandes du client se découpent en pages', async () => {
+      const { body: connexion } = await appeler('POST', '/api/auth/login', {
+        corps: { email: 'hugo@test.fr', motDePasse: 'motdepasse1' },
+      });
+      const { body: produit } = await appeler('POST', '/api/vetements', {
+        jeton: jetonAdmin,
+        corps: vetementTest('Stock client', [{ taille: 'M', stock: 10 }]),
+      });
+      const ids = [];
+      for (let i = 0; i < 2; i++) {
+        const { body } = await commander([{ vetementId: produit.id, taille: 'M', quantite: 1 }], { jeton: connexion.token });
+        ids.push(body.id);
+      }
+      const lire = (page) => fetch(`${url}/api/commandes/miennes?parPage=2&page=${page}`, {
+        headers: { Authorization: `Bearer ${connexion.token}`, 'X-Forwarded-For': '10.9.9.4' },
+      });
+      const page1 = await lire(1);
+      assert.equal(page1.headers.get('x-total-count'), '3');
+      assert.deepEqual((await page1.json()).map(c => c.id), [ids[1], ids[0]]);
+      assert.equal((await (await lire(2)).json()).length, 1);
     });
 
     test("l'admin voit toutes les commandes et peut filtrer par statut", async () => {

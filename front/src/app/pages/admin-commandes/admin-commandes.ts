@@ -8,6 +8,7 @@ import { CommandeService } from '../../services/commande';
 import {
   Commande, CompteursCommandes, LIBELLES_STATUT, StatutCommande, TriCommandes,
 } from '../../models/commande';
+import { Pagination } from '../../components/pagination/pagination';
 
 type FiltreStatut = StatutCommande | 'toutes';
 
@@ -39,7 +40,7 @@ const lireEtat = (p: ParamMap): Etat => {
 
 @Component({
   selector: 'app-admin-commandes',
-  imports: [CurrencyPipe, DatePipe, RouterLink, ReactiveFormsModule],
+  imports: [CurrencyPipe, DatePipe, RouterLink, ReactiveFormsModule, Pagination],
   templateUrl: './admin-commandes.html',
   styleUrl: './admin-commandes.scss',
 })
@@ -143,9 +144,7 @@ export class AdminCommandes {
   }
 
   protected allerA(page: number) {
-    const cible = Math.min(Math.max(page, 1), this.nbPages());
-    this.appliquer({ page: cible === 1 ? null : cible }, true);
-    window.scrollTo({ top: 0 });
+    this.appliquer({ page: page === 1 ? null : page }, true);
   }
 
   protected expedier(commande: Commande) {

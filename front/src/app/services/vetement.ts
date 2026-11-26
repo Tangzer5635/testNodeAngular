@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { map, Observable } from 'rxjs';
 import { Vetement } from '../models/vetement';
 import { environment } from '../../environments/environment';
 
@@ -10,6 +10,17 @@ export interface FiltresVetements {
   tri?: string;
 }
 
+export interface PageVetements {
+  vetements: Vetement[];
+  total: number;
+}
+
+const enParametres = (valeurs: object): HttpParams =>
+  Object.entries(valeurs).reduce(
+    (params, [cle, valeur]) => (valeur === undefined || valeur === null || valeur === '' ? params : params.set(cle, valeur)),
+    new HttpParams()
+  );
+
 @Injectable({
   providedIn: 'root',
 })
@@ -18,14 +29,19 @@ export class VetementService {
   private apiUrl = `${environment.apiUrl}/vetements`;
 
   getAll(filtres: FiltresVetements = {}): Observable<Vetement[]> {
-  let params = new HttpParams();
-  for (const [cle, valeur] of Object.entries(filtres)) {
-    if (valeur) {
-      params = params.set(cle, valeur);
-    }
+    return this.http.get<Vetement[]>(this.apiUrl, { params: enParametres(filtres) });
   }
-  return this.http.get<Vetement[]>(this.apiUrl, { params });
-}
+
+  getPage(filtres: FiltresVetements, page: number, parPage: number): Observable<PageVetements> {
+    return this.http
+      .get<Vetement[]>(this.apiUrl, { params: enParametres({ ...filtres, page, parPage }), observe: 'response' })
+      .pipe(
+        map(reponse => ({
+          vetements: reponse.body ?? [],
+          total: Number(reponse.headers.get('X-Total-Count') ?? reponse.body?.length ?? 0),
+        }))
+      );
+  }
 
   getById(id: number): Observable<Vetement> {
     return this.http.get<Vetement>(`${this.apiUrl}/${id}`);

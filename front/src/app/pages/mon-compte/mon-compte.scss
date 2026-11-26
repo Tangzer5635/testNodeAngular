@@ -118,3 +118,9 @@ ul {
 .bouton {
   @include v.bouton-principal;
 }
+
+.compteur {
+  margin: -0.5rem 0 1.25rem;
+  color: v.$gris-texte;
+  font-size: 0.9375rem;
+}

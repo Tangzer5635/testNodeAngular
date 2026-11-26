@@ -107,3 +107,39 @@ th:last-child {
     display: none;
   }
 }
+
+.outils {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.25rem;
+  margin-bottom: 1.5rem;
+
+  input {
+    flex: 0 1 22rem;
+    min-width: 0;
+    height: 2.25rem;
+    padding: 0 0.9rem;
+    border: 1px solid transparent;
+    border-radius: v.$rayon-pilule;
+    background-color: v.$gris-fond;
+    color: v.$encre;
+    font: inherit;
+    font-size: 0.875rem;
+
+    &:focus {
+      outline: none;
+      border-color: v.$bleu;
+      background-color: v.$blanc;
+    }
+  }
+}
+
+.compteur {
+  color: v.$gris-texte;
+  font-size: 0.875rem;
+}
+
+.vide {
+  color: v.$gris-texte;
+}

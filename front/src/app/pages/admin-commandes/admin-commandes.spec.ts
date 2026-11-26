@@ -51,7 +51,8 @@ describe('Admin des commandes', () => {
     expect(requete.request.params.get('page')).toBe('1');
     expect(page.querySelector('.compteur')?.textContent).toContain('57 commandes');
     expect(page.querySelectorAll('article').length).toBe(20);
-    expect(page.querySelector('.pagination span')?.textContent).toContain('Page 1 sur 3');
+    expect(page.querySelector('app-pagination [aria-current="page"]')?.textContent?.trim()).toBe('1');
+    expect(page.querySelectorAll('app-pagination .numeros button').length).toBe(3);
   });
 
   it('affiche le nombre de commandes sur chaque statut', async () => {
@@ -68,13 +69,13 @@ describe('Admin des commandes', () => {
     repondre(http, 57, [commande(57)]);
     await harness.fixture.whenStable();
     vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
-    bouton(page, '.pagination button', 'Suivante').click();
+    bouton(page, 'app-pagination button', 'Suivante').click();
     await harness.fixture.whenStable();
     const requete = repondre(http, 57, [commande(37)]);
     await harness.fixture.whenStable();
     expect(requete.request.params.get('page')).toBe('2');
     expect(router.url).toContain('page=2');
-    expect(page.querySelector('.pagination span')?.textContent).toContain('Page 2 sur 3');
+    expect(page.querySelector('app-pagination [aria-current="page"]')?.textContent?.trim()).toBe('2');
   });
 
   it('revient à la page 1 quand on change de statut', async () => {
@@ -158,7 +159,7 @@ describe('Admin des commandes', () => {
     const { harness, http, page } = await ouvrir();
     repondre(http, 3, [commande(3), commande(2), commande(1)]);
     await harness.fixture.whenStable();
-    expect(page.querySelector('.pagination')).toBeNull();
+    expect(page.querySelector('app-pagination nav')).toBeNull();
   });
 
   it("affiche l'erreur renvoyée par le serveur", async () => {

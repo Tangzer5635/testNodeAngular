@@ -95,11 +95,5 @@
     </div>
   }
 
-  @if (nbPages() > 1) {
-    <nav class="pagination" aria-label="Pages">
-      <button type="button" (click)="allerA(etat().page - 1)" [disabled]="etat().page === 1">Précédente</button>
-      <span>Page {{ etat().page }} sur {{ nbPages() }}</span>
-      <button type="button" (click)="allerA(etat().page + 1)" [disabled]="etat().page >= nbPages()">Suivante</button>
-    </nav>
-  }
+  <app-pagination [page]="etat().page" [nbPages]="nbPages()" (changer)="allerA($event)" />
 }

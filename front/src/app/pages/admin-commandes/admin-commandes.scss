@@ -122,22 +122,6 @@
   font-size: 0.875rem;
 }
 
-.pagination {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 1.5rem;
-  margin-top: 2rem;
-  color: v.$gris-texte;
-  font-size: 0.9375rem;
-
-  button {
-    @include v.bouton-secondaire;
-    min-height: 2.5rem;
-    font-size: 0.9375rem;
-  }
-}
-
 article {
   margin-bottom: 1.25rem;
   padding: 1.75rem;

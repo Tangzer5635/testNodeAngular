@@ -3,6 +3,7 @@ import * as categorieRepository from '../repositories/categorie.repository.js';
 import { ValidationError } from '../errors/ValidationError.js';
 import { NotFoundError } from '../errors/NotFoundError.js';
 import { NOM_IMAGE, supprimerImage } from './image.service.js';
+import { lirePagination } from './pagination.js';
 
 const estIdValide = (id) => Number.isInteger(id) && id > 0;
 
@@ -54,7 +55,7 @@ const validerVetement = async (data) => {
   }
 };
 
-export const getVetements = async ({ categorie, recherche, tri } = {}) => {
+export const getVetements = async ({ categorie, recherche, tri, page, parPage } = {}) => {
   const triChoisi = tri ?? 'recent';
   if (!Object.hasOwn(vetementRepository.TRIS, triChoisi)) {
     throw new ValidationError(
@@ -62,11 +63,17 @@ export const getVetements = async ({ categorie, recherche, tri } = {}) => {
     );
   }
   const texte = typeof recherche === 'string' ? recherche.trim() : '';
-  return vetementRepository.findAll({
-    categorie,
-    recherche: texte || undefined,
-    tri: triChoisi,
-  });
+  const filtres = { categorie, recherche: texte || undefined };
+  if (page === undefined && parPage === undefined) {
+    const vetements = await vetementRepository.findAll({ ...filtres, tri: triChoisi });
+    return { vetements, total: vetements.length };
+  }
+  const { limite, decalage } = lirePagination({ page, parPage }, 12);
+  const [vetements, total] = await Promise.all([
+    vetementRepository.findAll({ ...filtres, tri: triChoisi, limite, decalage }),
+    vetementRepository.compter(filtres),
+  ]);
+  return { vetements, total };
 };
 
 const trouverVetement = async (id) => {

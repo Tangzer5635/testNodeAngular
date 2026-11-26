@@ -2,6 +2,9 @@
 <p class="email">{{ auth.utilisateur()?.email }}</p>
 
 <h2>Mes commandes</h2>
+@if (total() > 0) {
+  <p class="compteur">{{ total() }} commande{{ total() > 1 ? 's' : '' }}</p>
+}
 
 @if (erreur()) {
   <p class="erreur">{{ erreur() }}</p>
@@ -32,6 +35,8 @@
       <a routerLink="/" class="bouton">Découvrir le catalogue</a>
     </div>
   }
+
+  <app-pagination [page]="page()" [nbPages]="nbPages()" (changer)="allerA($event)" />
 } @else {
   <p>Chargement…</p>
 }

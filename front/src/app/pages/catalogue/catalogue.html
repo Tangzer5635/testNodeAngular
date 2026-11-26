@@ -23,7 +23,7 @@
 } @else if (chargement()) {
   <p>Chargement…</p>
 } @else {
-  <p class="compteur">{{ vetements().length }} article{{ vetements().length > 1 ? 's' : '' }}</p>
+  <p class="compteur">{{ total() }} article{{ total() > 1 ? 's' : '' }}</p>
   <ul>
     @for (vetement of vetements(); track vetement.id) {
       <li>
@@ -46,4 +46,6 @@
       </li>
     }
   </ul>
+
+  <app-pagination [page]="page()" [nbPages]="nbPages()" (changer)="allerA($event)" />
 }

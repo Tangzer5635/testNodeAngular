@@ -6,6 +6,16 @@
   </div>
 </div>
 
+<div class="outils">
+  <input
+    type="search"
+    [formControl]="recherche"
+    placeholder="Rechercher un vêtement"
+    aria-label="Rechercher un vêtement"
+  />
+  <span class="compteur">{{ total() }} vêtement{{ total() > 1 ? 's' : '' }}</span>
+</div>
+
 @if (erreur()) {
   <p class="erreur">{{ erreur() }}</p>
 }
@@ -40,8 +50,10 @@
       </tr>
     } @empty {
       <tr>
-        <td colspan="5">Aucun vêtement.</td>
+        <td colspan="5" class="vide">{{ chargement() ? 'Chargement…' : recherche.value ? 'Aucun vêtement ne correspond à cette recherche.' : 'Aucun vêtement.' }}</td>
       </tr>
     }
   </tbody>
 </table>
+
+<app-pagination [page]="page()" [nbPages]="nbPages()" (changer)="allerA($event)" />

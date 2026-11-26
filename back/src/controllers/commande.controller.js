@@ -6,7 +6,8 @@ export const passer = async (req, res) => {
 };
 
 export const getMiennes = async (req, res) => {
-  const commandes = await commandeService.getCommandesDe(req.utilisateur.sub);
+  const { commandes, total } = await commandeService.getCommandesDe(req.utilisateur.sub, req.query);
+  res.set('X-Total-Count', String(total));
   res.json(commandes);
 };
 

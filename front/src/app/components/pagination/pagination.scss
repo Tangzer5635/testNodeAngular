@@ -1,0 +1,74 @@
+@use "../../../styles/variables" as v;
+
+nav {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 2.5rem;
+}
+
+.numeros {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+button {
+  min-width: 2.25rem;
+  height: 2.25rem;
+  padding: 0 0.5rem;
+  border: none;
+  border-radius: v.$rayon-pilule;
+  background: none;
+  color: v.$encre;
+  font: inherit;
+  font-size: 0.9375rem;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition: background-color v.$transition, color v.$transition;
+
+  &:hover:not(:disabled, .actif) {
+    background-color: v.$gris-fond;
+  }
+
+  &.actif {
+    background-color: v.$encre;
+    color: v.$blanc;
+    cursor: default;
+  }
+
+  &:disabled {
+    color: v.$gris-discret;
+    cursor: default;
+  }
+
+  &:focus-visible {
+    outline: 2px solid v.$bleu;
+    outline-offset: 2px;
+  }
+}
+
+.fleche {
+  padding: 0 0.9rem;
+  color: v.$lien;
+}
+
+.ellipse {
+  min-width: 1.5rem;
+  color: v.$gris-discret;
+  text-align: center;
+}
+
+@media (max-width: v.$ecran-petit) {
+  nav {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .numeros {
+    order: -1;
+    width: 100%;
+    justify-content: center;
+  }
+}

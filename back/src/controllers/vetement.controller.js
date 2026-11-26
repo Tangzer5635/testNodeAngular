@@ -1,8 +1,9 @@
 import * as vetementService from '../services/vetement.service.js';
 
 export const getAll = async (req, res) => {
-  const { categorie, recherche, tri } = req.query;
-  const vetements = await vetementService.getVetements({ categorie, recherche, tri });
+  const { categorie, recherche, tri, page, parPage } = req.query;
+  const { vetements, total } = await vetementService.getVetements({ categorie, recherche, tri, page, parPage });
+  res.set('X-Total-Count', String(total));
   res.json(vetements);
 };
 

@@ -72,14 +72,14 @@ La page de connexion est sur `/connexion`.
 |---|---|---|---|
 | POST | `/api/auth/login` | connexion → `{ token }` | non |
 | POST | `/api/auth/inscription` | créer un compte client (201 → `{ token }`, 409 si l'email existe) | non |
-| GET | `/api/vetements` (options `?categorie=vestes&recherche=jean&tri=prix_asc`) | liste des vêtements | non |
+| GET | `/api/vetements` (options `categorie`, `recherche`, `tri`, `page`, `parPage`) | liste des vêtements ; paginée (12 par défaut) dès que `page` est donné, total dans `X-Total-Count` | non |
 | GET | `/api/vetements/:id` | un vêtement | non |
 | POST | `/api/vetements` | créer (201) | admin |
 | PUT | `/api/vetements/:id` | modifier | admin |
 | DELETE | `/api/vetements/:id` | supprimer (204) | admin |
 | GET | `/api/categories` | liste des catégories | non |
 | POST | `/api/commandes` | passer commande (201 → `{ id, total }`, 409 si stock insuffisant) ; liée au compte si un jeton est envoyé | non |
-| GET | `/api/commandes/miennes` | commandes du client connecté | client |
+| GET | `/api/commandes/miennes` (options `page`, `parPage`) | commandes du client connecté, 10 par page, total dans `X-Total-Count` | client |
 | GET | `/api/commandes` (options `statut`, `recherche`, `du`, `au`, `tri`, `page`) | liste paginée par 20, total dans l'en-tête `X-Total-Count` | admin |
 | GET | `/api/commandes/compteurs` (options `recherche`, `du`, `au`) | nombre de commandes par statut → `{ en_attente, expediee, annulee, total }` | admin |
 | PATCH | `/api/commandes/:id` (`{ "statut": "expediee" }` ou `"annulee"`) | changer le statut (annuler remet en stock) | admin |

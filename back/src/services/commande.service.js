@@ -3,6 +3,7 @@ import * as commandeRepository from '../repositories/commande.repository.js';
 import { ValidationError } from '../errors/ValidationError.js';
 import { NotFoundError } from '../errors/NotFoundError.js';
 import { ConflictError } from '../errors/ConflictError.js';
+import { lirePagination } from './pagination.js';
 
 export const QUANTITE_MAX = 10;
 
@@ -83,7 +84,14 @@ export const passerCommande = async (data, utilisateur) => {
   });
 };
 
-export const getCommandesDe = async (utilisateurId) => commandeRepository.findAll({ utilisateurId });
+export const getCommandesDe = async (utilisateurId, { page, parPage } = {}) => {
+  const { limite, decalage } = lirePagination({ page, parPage }, 10);
+  const [commandes, total] = await Promise.all([
+    commandeRepository.findAll({ utilisateurId, limite, decalage }),
+    commandeRepository.compter({ utilisateurId }),
+  ]);
+  return { commandes, total };
+};
 
 export const PAR_PAGE = 20;
 
@@ -123,17 +131,13 @@ export const getCommandes = async ({ statut, page, tri, ...criteres } = {}) => {
   if (statut !== undefined && !Object.hasOwn(TRANSITIONS, statut)) {
     throw new ValidationError(`Statut inconnu : ${statut}`);
   }
-  const numero = page === undefined ? 1 : Number(page);
-  if (!Number.isInteger(numero) || numero < 1) {
-    throw new ValidationError('La page doit être un nombre entier à partir de 1');
-  }
   const triChoisi = tri ?? 'recent';
   if (!Object.hasOwn(commandeRepository.TRIS, triChoisi)) {
     throw new ValidationError(`Tri inconnu. Valeurs acceptées : ${Object.keys(commandeRepository.TRIS).join(', ')}`);
   }
   const filtres = { ...validerFiltres(criteres), statut };
   const [commandes, total] = await Promise.all([
-    commandeRepository.findAll({ ...filtres, tri: triChoisi, limite: PAR_PAGE, decalage: (numero - 1) * PAR_PAGE }),
+    commandeRepository.findAll({ ...filtres, tri: triChoisi, ...lirePagination({ page }, PAR_PAGE) }),
     commandeRepository.compter(filtres),
   ]);
   return { commandes, total };

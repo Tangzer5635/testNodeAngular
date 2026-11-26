@@ -3,6 +3,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { enFrancais } from '../../testing/francais';
 import { provideRouter } from '@angular/router';
+import { RouterTestingHarness } from '@angular/router/testing';
 import { MonCompte } from './mon-compte';
 import { Commande } from '../../models/commande';
 import { jetonDe } from '../../testing/jetons';
@@ -21,7 +22,9 @@ const afficher = async (commandes: Commande[]) => {
     providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting(), enFrancais],
   });
   const fixture = TestBed.createComponent(MonCompte);
-  TestBed.inject(HttpTestingController).expectOne(r => r.url.endsWith('/commandes/miennes')).flush(commandes);
+  TestBed.inject(HttpTestingController)
+    .expectOne(r => r.url.endsWith('/commandes/miennes'))
+    .flush(commandes, { headers: { 'X-Total-Count': String(commandes.length) } });
   await fixture.whenStable();
   return fixture.nativeElement as HTMLElement;
 };
@@ -45,5 +48,32 @@ describe('Mon compte', () => {
   it("invite à découvrir le catalogue s'il n'a encore rien commandé", async () => {
     const page = await afficher([]);
     expect(page.querySelector('.vide')?.textContent).toContain("pas encore passé de commande");
+  });
+
+  it('découpe un long historique en pages de 10 et suit la page de l\'adresse', async () => {
+    localStorage.setItem('jeton', jetonDe('client', { nom: 'Léa Martin', email: 'lea@test.fr' }));
+    TestBed.configureTestingModule({
+      providers: [
+        provideRouter([{ path: 'mon-compte', component: MonCompte }]),
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        enFrancais,
+      ],
+    });
+    const harness = await RouterTestingHarness.create('/mon-compte?page=2');
+    const http = TestBed.inject(HttpTestingController);
+    const requete = http.expectOne(r => r.url.endsWith('/commandes/miennes'));
+    expect(requete.request.params.get('page')).toBe('2');
+    requete.flush(Array.from({ length: 10 }, (_, i) => ({ ...commande, id: 13 - i })), { headers: { 'X-Total-Count': '23' } });
+    await harness.fixture.whenStable();
+    const page = harness.routeNativeElement as HTMLElement;
+    expect(page.querySelector('.compteur')?.textContent).toContain('23 commandes');
+    expect(page.querySelectorAll('article').length).toBe(10);
+    expect(page.querySelector('app-pagination [aria-current="page"]')?.textContent?.trim()).toBe('2');
+
+    vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
+    [...page.querySelectorAll<HTMLButtonElement>('app-pagination button')].find(b => b.textContent?.trim() === '3')!.click();
+    await harness.fixture.whenStable();
+    expect(http.expectOne(r => r.url.endsWith('/commandes/miennes')).request.params.get('page')).toBe('3');
   });
 });

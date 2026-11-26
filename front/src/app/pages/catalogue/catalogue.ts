@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { CurrencyPipe } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
@@ -7,10 +7,13 @@ import { VetementService } from '../../services/vetement';
 import { CategorieService } from '../../services/categorie';
 import { stockTotal, Vetement } from '../../models/vetement';
 import { environment } from '../../../environments/environment';
+import { Pagination } from '../../components/pagination/pagination';
+
+const PAR_PAGE = 12;
 
 @Component({
   selector: 'app-catalogue',
-  imports: [CurrencyPipe, RouterLink, ReactiveFormsModule],
+  imports: [CurrencyPipe, RouterLink, ReactiveFormsModule, Pagination],
   templateUrl: './catalogue.html',
   styleUrl: './catalogue.scss',
 })
@@ -21,6 +24,9 @@ export class Catalogue {
   private router = inject(Router);
 
   protected vetements = signal<Vetement[]>([]);
+  protected total = signal(0);
+  protected page = signal(1);
+  protected nbPages = computed(() => Math.max(1, Math.ceil(this.total() / PAR_PAGE)));
   protected categories = signal<string[]>([]);
   protected erreur = signal<string | null>(null);
   protected chargement = signal(true);
@@ -52,20 +58,23 @@ export class Catalogue {
           tri: params.get('tri') ?? undefined,
         };
 
+        const page = Math.max(1, Math.floor(Number(params.get('page'))) || 1);
+        this.page.set(page);
         this.categorie.set(filtres.categorie ?? null);
         this.tri.set(filtres.tri ?? 'recent');
         this.recherche.setValue(filtres.recherche ?? '', { emitEvent: false });
         this.erreur.set(null);
 
-        return this.vetementService.getAll(filtres).pipe(
+        return this.vetementService.getPage(filtres, page, PAR_PAGE).pipe(
           catchError(() => {
             this.erreur.set('Impossible de charger le catalogue.');
-            return of([]);
+            return of({ vetements: [], total: 0 });
           }),
         );
       }),
-    ).subscribe(vetements => {
+    ).subscribe(({ vetements, total }) => {
       this.vetements.set(vetements);
+      this.total.set(total);
       this.chargement.set(false);
     });
 
@@ -87,7 +96,11 @@ export class Catalogue {
     this.appliquerFiltres({ categorie: null, recherche: null, tri: null });
   }
 
+  protected allerA(page: number) {
+    this.router.navigate([], { queryParams: { page: page === 1 ? null : page }, queryParamsHandling: 'merge' });
+  }
+
   private appliquerFiltres(changements: Record<string, string | null>) {
-    this.router.navigate([], { queryParams: changements, queryParamsHandling: 'merge' });
+    this.router.navigate([], { queryParams: { ...changements, page: null }, queryParamsHandling: 'merge' });
   }
 }

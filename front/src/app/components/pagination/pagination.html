@@ -1,0 +1,21 @@
+@if (nbPages() > 1) {
+  <nav aria-label="Pages">
+    <button type="button" class="fleche" (click)="aller(page() - 1)" [disabled]="page() === 1">Précédente</button>
+    <div class="numeros">
+      @for (numero of numeros(); track $index) {
+        @if (numero === null) {
+          <span class="ellipse">…</span>
+        } @else {
+          <button
+            type="button"
+            [class.actif]="numero === page()"
+            [attr.aria-current]="numero === page() ? 'page' : null"
+            [attr.aria-label]="'Page ' + numero"
+            (click)="aller(numero)"
+          >{{ numero }}</button>
+        }
+      }
+    </div>
+    <button type="button" class="fleche" (click)="aller(page() + 1)" [disabled]="page() >= nbPages()">Suivante</button>
+  </nav>
+}

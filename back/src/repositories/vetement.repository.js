@@ -12,31 +12,44 @@ const SELECT_VETEMENTS = `
 
 export const TRIS = {
   recent: 'v.id DESC',
-  prix_asc: 'v.prix ASC',
-  prix_desc: 'v.prix DESC',
-  nom: 'v.nom ASC',
+  prix_asc: 'v.prix ASC, v.id DESC',
+  prix_desc: 'v.prix DESC, v.id DESC',
+  nom: 'v.nom ASC, v.id DESC',
 };
 
-export const findAll = async ({ categorie, recherche, tri = 'recent' } = {}) => {
+const filtrer = ({ categorie, recherche }) => {
   const conditions = [];
   const valeurs = [];
-
   if (categorie) {
     valeurs.push(categorie);
     conditions.push(`c.nom = $${valeurs.length}`);
   }
-
   if (recherche) {
     valeurs.push(`%${recherche}%`);
     const n = valeurs.length;
     conditions.push(`(v.nom ILIKE $${n} OR v.description ILIKE $${n})`);
   }
+  return { where: conditions.length > 0 ? ` WHERE ${conditions.join(' AND ')}` : '', valeurs };
+};
 
-  const where = conditions.length > 0 ? ` WHERE ${conditions.join(' AND ')}` : '';
-  const query = `${SELECT_VETEMENTS}${where} ORDER BY ${TRIS[tri]}`;
-
-  const result = await pool.query(query, valeurs);
+export const findAll = async ({ tri = 'recent', limite, decalage = 0, ...filtres } = {}) => {
+  const { where, valeurs } = filtrer(filtres);
+  let pagination = '';
+  if (limite) {
+    valeurs.push(limite, decalage);
+    pagination = ` LIMIT $${valeurs.length - 1} OFFSET $${valeurs.length}`;
+  }
+  const result = await pool.query(`${SELECT_VETEMENTS}${where} ORDER BY ${TRIS[tri]}${pagination}`, valeurs);
   return result.rows;
+};
+
+export const compter = async (filtres = {}) => {
+  const { where, valeurs } = filtrer(filtres);
+  const result = await pool.query(
+    `SELECT COUNT(*)::int AS total FROM vetements v JOIN categories c ON v.categorie_id = c.id${where}`,
+    valeurs
+  );
+  return result.rows[0].total;
 };
 
 export const findById = async (id) => {
