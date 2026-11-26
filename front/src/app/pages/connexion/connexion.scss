@@ -1,0 +1,68 @@
+@use "../../../styles/variables" as v;
+
+:host {
+  display: block;
+  max-width: 420px;
+  margin: 0 auto;
+  background-color: v.$couleur-carte;
+  border-radius: v.$rayon;
+  box-shadow: v.$ombre;
+  padding: v.$espace * 2;
+}
+
+h1 {
+  margin-top: 0;
+}
+
+.erreur {
+  padding: v.$espace;
+  background-color: #fdecea;
+  color: #b3261e;
+  border-radius: v.$rayon;
+}
+
+label {
+  display: block;
+  margin-top: v.$espace;
+  font-weight: 600;
+}
+
+input {
+  display: block;
+  width: 100%;
+  margin-top: v.$espace * 0.35;
+  padding: v.$espace * 0.6;
+  border: 1px solid #d0d0d0;
+  border-radius: v.$rayon * 0.5;
+  font: inherit;
+  font-weight: normal;
+
+  &:focus {
+    outline: 2px solid v.$couleur-accent;
+    border-color: transparent;
+  }
+}
+
+small {
+  display: block;
+  margin-top: v.$espace * 0.25;
+  color: #b3261e;
+}
+
+button {
+  width: 100%;
+  margin-top: v.$espace * 1.5;
+  padding: v.$espace * 0.7;
+  border: none;
+  border-radius: v.$rayon;
+  background-color: v.$couleur-accent;
+  color: white;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:disabled {
+    background-color: #c9c9c9;
+    cursor: not-allowed;
+  }
+}

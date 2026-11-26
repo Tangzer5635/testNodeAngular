@@ -1,0 +1,27 @@
+<h1>Connexion</h1>
+
+@if (erreur()) {
+  <p class="erreur">{{ erreur() }}</p>
+}
+
+<form [formGroup]="connexionForm" (ngSubmit)="seConnecter()">
+  <label>
+    Email
+    <input type="email" formControlName="email" autocomplete="username" />
+  </label>
+  @if (connexionForm.controls.email.invalid && connexionForm.controls.email.touched) {
+    <small>Saisis une adresse email valide.</small>
+  }
+
+  <label>
+    Mot de passe
+    <input type="password" formControlName="motDePasse" autocomplete="current-password" />
+  </label>
+  @if (connexionForm.controls.motDePasse.invalid && connexionForm.controls.motDePasse.touched) {
+    <small>Le mot de passe est obligatoire.</small>
+  }
+
+  <button type="submit" [disabled]="connexionForm.invalid || enCours()">
+    {{ enCours() ? 'Connexion…' : 'Se connecter' }}
+  </button>
+</form>

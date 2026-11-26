@@ -1,5 +1,6 @@
-import { Component } from '@angular/core';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { Component, inject } from '@angular/core';
+import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { AuthService } from './services/auth';
 
 @Component({
   selector: 'app-root',
@@ -8,6 +9,14 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
   styleUrl: './app.scss'
 })
 export class App {
+  protected auth = inject(AuthService);
+  private router = inject(Router);
+
   protected nomBoutique = 'NodeAngular';
   protected annee = new Date().getFullYear();
+
+  protected seDeconnecter() {
+    this.auth.deconnexion();
+    this.router.navigate(['/']);
+  }
 }
