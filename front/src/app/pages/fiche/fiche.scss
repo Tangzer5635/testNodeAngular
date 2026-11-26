@@ -61,7 +61,30 @@ img {
       background-color: v.$couleur-primaire;
       color: white;
     }
+
+    // Taille épuisée : grisée et barrée
+    &:disabled {
+      border-color: #d0d0d0;
+      background-color: white;
+      color: #b0b0b0;
+      text-decoration: line-through;
+      cursor: not-allowed;
+    }
   }
+}
+
+.stock-faible {
+  color: v.$couleur-accent;
+  font-weight: 600;
+}
+
+.alerte {
+  display: inline-block;
+  padding: (v.$espace * 0.5) v.$espace;
+  border-radius: v.$rayon;
+  background-color: #fdecea;
+  color: #b3261e;
+  font-weight: 600;
 }
 
 // ---------- Boutons et liens ----------

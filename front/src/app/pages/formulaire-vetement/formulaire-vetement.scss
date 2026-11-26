@@ -118,3 +118,59 @@ small {
     cursor: pointer;
   }
 }
+
+// ---------- Tailles et stock ----------
+.tailles {
+  margin: v.$espace 0 0;
+  padding: v.$espace;
+  border: 1px solid #d0d0d0;
+  border-radius: v.$rayon * 0.5;
+
+  legend {
+    padding: 0 (v.$espace * 0.35);
+    font-weight: 600;
+  }
+}
+
+.ligne-taille {
+  display: grid;
+  grid-template-columns: 1fr 1fr 5rem;
+  gap: v.$espace * 0.6;
+  align-items: center;
+  margin-bottom: v.$espace * 0.5;
+
+  input {
+    margin-top: 0;
+  }
+
+  .lien {
+    padding: 0;
+    border: none;
+    background: none;
+    color: #b3261e;
+    font: inherit;
+    text-decoration: underline;
+    cursor: pointer;
+
+    &:disabled {
+      color: #c9c9c9;
+      cursor: not-allowed;
+    }
+  }
+}
+
+.entete-tailles {
+  margin-bottom: v.$espace * 0.25;
+  color: v.$couleur-texte-doux;
+  font-size: 0.9rem;
+}
+
+.ajouter-taille {
+  padding: (v.$espace * 0.35) (v.$espace * 0.8);
+  border: 1px dashed v.$couleur-primaire;
+  border-radius: v.$rayon * 0.5;
+  background: none;
+  color: v.$couleur-primaire;
+  font: inherit;
+  cursor: pointer;
+}

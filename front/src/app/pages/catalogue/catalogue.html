@@ -34,6 +34,9 @@
         </a>
         <h2><a routerLink="/vetements/{{ vetement.id }}">{{ vetement.nom }}</a></h2>
         <p>{{ vetement.categorie }}</p>
+        @if (stockTotal(vetement) === 0) {
+          <p class="epuise">Épuisé</p>
+        }
         <p>{{ vetement.prix | currency:'EUR' }}</p>
       </li>
     } @empty {

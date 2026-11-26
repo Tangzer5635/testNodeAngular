@@ -1,6 +1,7 @@
 import { ValidationError } from '../errors/ValidationError.js';
 import { NotFoundError } from '../errors/NotFoundError.js';
 import { UnauthorizedError } from '../errors/UnauthorizedError.js';
+import { ConflictError } from '../errors/ConflictError.js';
 import multer from 'multer';
 
 export const routeIntrouvable = (req, res) => {
@@ -23,6 +24,9 @@ export const gestionnaireErreurs = (error, req, res, next) => {
   }
   if (error instanceof NotFoundError) {
     return res.status(404).json({ message: error.message });
+  }
+  if (error instanceof ConflictError) {
+    return res.status(409).json({ message: error.message });
   }
   console.error(error);
   res.status(500).json({ message: 'Erreur serveur' });

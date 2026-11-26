@@ -5,7 +5,7 @@ import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { catchError, debounceTime, distinctUntilChanged, of, switchMap } from 'rxjs';
 import { VetementService } from '../../services/vetement';
 import { CategorieService } from '../../services/categorie';
-import { Vetement } from '../../models/vetement';
+import { stockTotal, Vetement } from '../../models/vetement';
 import { environment } from '../../../environments/environment';
 
 @Component({
@@ -25,6 +25,7 @@ export class Catalogue {
   protected erreur = signal<string | null>(null);
   protected chargement = signal(true);
   protected imagesUrl = environment.imagesUrl;
+  protected stockTotal = stockTotal;
 
   // Filtres actuels, recopiés depuis l'URL (pour savoir quoi mettre en évidence)
   protected categorie = signal<string | null>(null);

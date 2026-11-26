@@ -1,0 +1,169 @@
+@use "../../../styles/variables" as v;
+
+.entete {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  .retour {
+    color: v.$couleur-primaire;
+    font-weight: 600;
+  }
+}
+
+.filtres {
+  display: flex;
+  flex-wrap: wrap;
+  gap: v.$espace * 0.5;
+  margin-bottom: v.$espace * 1.5;
+
+  button {
+    padding: (v.$espace * 0.4) v.$espace;
+    border: 1px solid v.$couleur-primaire;
+    border-radius: 999px;
+    background-color: transparent;
+    color: v.$couleur-primaire;
+    font: inherit;
+    cursor: pointer;
+
+    &:hover,
+    &.actif {
+      background-color: v.$couleur-primaire;
+      color: white;
+    }
+  }
+}
+
+.erreur {
+  padding: v.$espace;
+  background-color: #fdecea;
+  color: #b3261e;
+  border-radius: v.$rayon;
+}
+
+article {
+  margin-bottom: v.$espace * 1.2;
+  padding: v.$espace * 1.2;
+  background-color: v.$couleur-carte;
+  border-radius: v.$rayon;
+  box-shadow: v.$ombre;
+
+  header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: v.$espace;
+
+    h2 {
+      margin: 0;
+      font-size: 1.15rem;
+    }
+
+    time {
+      margin-left: auto;
+      color: v.$couleur-texte-doux;
+    }
+  }
+}
+
+.statut {
+  padding: (v.$espace * 0.15) (v.$espace * 0.6);
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+
+  &.en_attente {
+    background-color: #fff4e5;
+    color: #a15c00;
+  }
+
+  &.expediee {
+    background-color: #e6f4ea;
+    color: #1e7b34;
+  }
+
+  &.annulee {
+    background-color: #eeeeee;
+    color: #6b6b6b;
+  }
+}
+
+.contenu {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr;
+  gap: v.$espace * 1.5;
+  margin-top: v.$espace;
+}
+
+.client {
+  display: flex;
+  flex-direction: column;
+  gap: v.$espace * 0.2;
+
+  a {
+    color: v.$couleur-primaire;
+  }
+
+  .adresse {
+    color: v.$couleur-texte-doux;
+    white-space: pre-line; // garde les retours à la ligne de l'adresse
+  }
+}
+
+ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+
+  li {
+    display: flex;
+    justify-content: space-between;
+    gap: v.$espace;
+    padding: (v.$espace * 0.35) 0;
+    border-bottom: 1px solid v.$couleur-fond;
+  }
+
+  .total {
+    border-bottom: none;
+
+    strong {
+      color: v.$couleur-accent;
+    }
+  }
+}
+
+footer {
+  display: flex;
+  gap: v.$espace;
+  margin-top: v.$espace;
+
+  button {
+    padding: (v.$espace * 0.5) v.$espace;
+    border: none;
+    border-radius: v.$rayon;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .expedier {
+    background-color: v.$couleur-primaire;
+    color: white;
+  }
+
+  .annuler {
+    background-color: transparent;
+    color: #b3261e;
+    text-decoration: underline;
+  }
+}
+
+.vide {
+  color: v.$couleur-texte-doux;
+}
+
+@media (max-width: 700px) {
+  .contenu {
+    grid-template-columns: 1fr;
+  }
+}

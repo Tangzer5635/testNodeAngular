@@ -32,9 +32,15 @@ export class FormulaireVetement {
     description: [''],
     prix: [0, [Validators.required, Validators.min(0)]],
     image: [''],
-    tailles: ['', Validators.required],
+    // FormArray : une liste de petits formulaires { taille, stock }, un par ligne à l'écran
+    tailles: this.fb.nonNullable.array([this.nouvelleTaille()]),
     categorie: ['', Validators.required],
   });
+
+  // Raccourci pour le template : la liste des lignes de taille
+  protected get tailles() {
+    return this.vetementForm.controls.tailles;
+  }
 
   constructor() {
     this.categorieService.getAll().subscribe({
@@ -53,9 +59,11 @@ export class FormulaireVetement {
             description: vetement.description ?? '',
             prix: vetement.prix,
             image: vetement.image ?? '',
-            tailles: vetement.tailles.join(', '),
             categorie: vetement.categorie,
           });
+          // patchValue ne sait pas créer de lignes : on vide la liste et on la remplit
+          this.tailles.clear();
+          vetement.tailles.forEach(t => this.tailles.push(this.nouvelleTaille(t.taille, t.stock)));
           this.nomImage.set(vetement.image ?? '');
         },
         error: err => this.erreur.set(
@@ -75,10 +83,7 @@ export class FormulaireVetement {
     const vetement = {
       ...valeurs,
       prix: Number(valeurs.prix),
-      tailles: valeurs.tailles
-        .split(',')
-        .map(taille => taille.trim())
-        .filter(taille => taille !== ''),
+      tailles: valeurs.tailles.map(t => ({ taille: t.taille.trim(), stock: Number(t.stock) })),
     };
 
     const id = this.id();
@@ -91,6 +96,23 @@ export class FormulaireVetement {
       next: () => this.router.navigate(['/admin']),
       error: err => this.erreur.set(err.error?.message ?? "Impossible d'enregistrer le vêtement."),
     });
+  }
+
+  private nouvelleTaille(taille = '', stock = 0) {
+    return this.fb.nonNullable.group({
+      taille: [taille, [Validators.required, Validators.maxLength(10)]],
+      stock: [stock, [Validators.required, Validators.min(0), Validators.pattern(/^\d+$/)]],
+    });
+  }
+
+  protected ajouterTaille() {
+    this.tailles.push(this.nouvelleTaille());
+  }
+
+  protected retirerTaille(index: number) {
+    if (this.tailles.length > 1) {
+      this.tailles.removeAt(index);
+    }
   }
 
 protected choisirImage(event: Event) {

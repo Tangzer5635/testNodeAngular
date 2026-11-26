@@ -5,6 +5,7 @@ import vetementRoutes from './routes/vetement.routes.js';
 import categorieRoutes from './routes/categorie.routes.js';
 import authRoutes from './routes/auth.routes.js';
 import imageRoutes from './routes/image.routes.js';
+import commandeRoutes from './routes/commande.routes.js';
 import { routeIntrouvable, gestionnaireErreurs } from './middlewares/erreurs.js';
 import { DOSSIER_UPLOADS } from './middlewares/upload.js';
 
@@ -29,6 +30,7 @@ app.use('/api/vetements', vetementRoutes);
 app.use('/api/categories', categorieRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/images', imageRoutes);
+app.use('/api/commandes', commandeRoutes);
 
 app.use(routeIntrouvable);
 app.use(gestionnaireErreurs);

@@ -22,12 +22,15 @@
         <div class="infos">
           <a [routerLink]="['/vetements', ligne.vetementId]" class="nom">{{ ligne.nom }}</a>
           <span>Taille {{ ligne.taille }} · {{ ligne.prix | currency:'EUR' }}</span>
+          @if (ligne.stock <= 3) {
+            <span class="stock-faible">Plus que {{ ligne.stock }} en stock</span>
+          }
         </div>
 
         <div class="quantite">
           <button type="button" (click)="moins(ligne)" [attr.aria-label]="'Retirer un ' + ligne.nom">−</button>
           <span>{{ ligne.quantite }}</span>
-          <button type="button" (click)="plus(ligne)" [disabled]="ligne.quantite >= quantiteMax" [attr.aria-label]="'Ajouter un ' + ligne.nom">+</button>
+          <button type="button" (click)="plus(ligne)" [disabled]="ligne.quantite >= quantiteMax(ligne)" [attr.aria-label]="'Ajouter un ' + ligne.nom">+</button>
         </div>
 
         <strong class="sous-total">{{ ligne.prix * ligne.quantite | currency:'EUR' }}</strong>
@@ -44,7 +47,7 @@
     </p>
     <div class="actions">
       <button type="button" class="secondaire" (click)="vider()">Vider le panier</button>
-      <button type="button" class="bouton" (click)="commander()">Commander</button>
+      <a routerLink="/commande" class="bouton">Commander</a>
     </div>
   </div>
 }

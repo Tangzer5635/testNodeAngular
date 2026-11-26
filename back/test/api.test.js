@@ -94,7 +94,64 @@ test('un nom d\'image dangereux est refusé (400) avant tout accès à la base',
   const reponse = await fetch(`${url}/api/vetements`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${jetonValide()}` },
-    body: JSON.stringify({ nom: 'Test', prix: 10, tailles: ['M'], image: '../../index.js', categorie: 'vestes' }),
+    body: JSON.stringify({ nom: 'Test', prix: 10, tailles: [{ taille: 'M', stock: 1 }], image: '../../index.js', categorie: 'vestes' }),
+  });
+  assert.equal(reponse.status, 400);
+});
+
+test('des tailles sans stock (ancien format) sont refusées (400)', async () => {
+  const reponse = await fetch(`${url}/api/vetements`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${jetonValide()}` },
+    body: JSON.stringify({ nom: 'Test', prix: 10, tailles: ['S', 'M'], categorie: 'vestes' }),
+  });
+  assert.equal(reponse.status, 400);
+});
+
+// ---------- Commandes ----------
+const commande = (corps) => fetch(`${url}/api/commandes`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify(corps),
+});
+const client = { nom: 'Léa Martin', email: 'lea@test.fr', adresse: '12 rue de la Paix, Lyon' };
+
+test('passer commande : un panier vide est refusé (400)', async () => {
+  const reponse = await commande({ client, lignes: [] });
+  assert.equal(reponse.status, 400);
+});
+
+test('passer commande : un email invalide est refusé (400)', async () => {
+  const reponse = await commande({ client: { ...client, email: 'pas-un-email' }, lignes: [{ vetementId: 1, taille: 'M', quantite: 1 }] });
+  assert.equal(reponse.status, 400);
+});
+
+test('passer commande : plus de 10 exemplaires (même réparti sur 2 lignes) est refusé (400)', async () => {
+  const lignes = [{ vetementId: 1, taille: 'M', quantite: 6 }, { vetementId: 1, taille: 'M', quantite: 5 }];
+  const reponse = await commande({ client, lignes });
+  assert.equal(reponse.status, 400);
+});
+
+test('passer commande : une quantité négative est refusée (400)', async () => {
+  const reponse = await commande({ client, lignes: [{ vetementId: 1, taille: 'M', quantite: -2 }] });
+  assert.equal(reponse.status, 400);
+});
+
+test('la liste des commandes est réservée à l\'admin (401)', async () => {
+  const reponse = await fetch(`${url}/api/commandes`);
+  assert.equal(reponse.status, 401);
+});
+
+test('changer le statut d\'une commande sans jeton renvoie 401', async () => {
+  const reponse = await fetch(`${url}/api/commandes/1`, { method: 'PATCH' });
+  assert.equal(reponse.status, 401);
+});
+
+test('un statut inconnu est refusé (400)', async () => {
+  const reponse = await fetch(`${url}/api/commandes/1`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${jetonValide()}` },
+    body: JSON.stringify({ statut: 'livree-par-drone' }),
   });
   assert.equal(reponse.status, 400);
 });

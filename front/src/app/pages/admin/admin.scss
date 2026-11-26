@@ -8,6 +8,11 @@
   gap: v.$espace;
 }
 
+.liens {
+  display: flex;
+  gap: v.$espace * 0.75;
+}
+
 .bouton {
   padding: (v.$espace * 0.6) (v.$espace * 1.2);
   background-color: v.$couleur-accent;
@@ -15,6 +20,15 @@
   text-decoration: none;
   font-weight: 600;
   border-radius: v.$rayon;
+
+  &.secondaire {
+    background-color: v.$couleur-primaire;
+  }
+}
+
+.epuise {
+  color: #b3261e;
+  font-weight: 600;
 }
 
 .erreur {

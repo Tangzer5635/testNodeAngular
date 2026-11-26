@@ -26,7 +26,7 @@ describe('App (header)', () => {
     await fixture.whenStable();
     expect(fixture.nativeElement.querySelector('.badge')).toBeNull();
 
-    const vetement = { id: 1, nom: 'Jean', description: '', prix: 50, tailles: ['40'], image: '', categorie: 'pantalons' };
+    const vetement = { id: 1, nom: 'Jean', description: '', prix: 50, tailles: [{ taille: '40', stock: 5 }], image: '', categorie: 'pantalons' };
     panier.ajouter(vetement, '40');
     panier.ajouter(vetement, '40');
     await fixture.whenStable();

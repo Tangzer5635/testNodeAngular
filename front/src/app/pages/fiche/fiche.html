@@ -9,23 +9,45 @@
   <p>Catégorie : {{ v.categorie }}</p>
   <p class="prix">{{ v.prix | currency:'EUR' }}</p>
 
-  <div class="tailles">
-    <span class="libelle">Taille</span>
-    @for (taille of v.tailles; track taille) {
-      <button type="button" [class.actif]="tailleChoisie() === taille" (click)="choisirTaille(taille)">
-        {{ taille }}
-      </button>
+  @if (epuise()) {
+    <p class="alerte">Cet article est épuisé.</p>
+  } @else {
+    <div class="tailles">
+      <span class="libelle">Taille</span>
+      @for (t of v.tailles; track t.taille) {
+        <button
+          type="button"
+          [class.actif]="tailleChoisie() === t.taille"
+          [disabled]="t.stock === 0"
+          [attr.title]="t.stock === 0 ? 'Épuisé' : null"
+          (click)="choisirTaille(t.taille)"
+        >
+          {{ t.taille }}
+        </button>
+      }
+    </div>
+
+    @if (tailleChoisie() && stockChoisi() <= stockFaible) {
+      <p class="stock-faible">
+        Plus que {{ stockChoisi() }} en stock dans cette taille !
+      </p>
     }
-  </div>
 
-  <button type="button" class="ajouter" [disabled]="!tailleChoisie()" (click)="ajouterAuPanier()">
-    {{ tailleChoisie() ? 'Ajouter au panier' : 'Choisis une taille' }}
-  </button>
+    <button type="button" class="ajouter" [disabled]="!peutAjouter()" (click)="ajouterAuPanier()">
+      @if (!tailleChoisie()) {
+        Choisis une taille
+      } @else if (!peutAjouter()) {
+        Tout le stock est dans ton panier
+      } @else {
+        Ajouter au panier
+      }
+    </button>
 
-  @if (ajoute()) {
-    <p class="confirmation">
-      Ajouté au panier (taille {{ tailleChoisie() }}). <a routerLink="/panier" class="lien">Voir le panier</a>
-    </p>
+    @if (ajoute()) {
+      <p class="confirmation">
+        Ajouté au panier (taille {{ tailleChoisie() }}). <a routerLink="/panier" class="lien">Voir le panier</a>
+      </p>
+    }
   }
 } @else {
   <p>Chargement…</p>

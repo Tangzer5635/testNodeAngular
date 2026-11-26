@@ -1,0 +1,60 @@
+<div class="entete">
+  <h1>Commandes</h1>
+  <a routerLink="/admin" class="retour">← Vêtements</a>
+</div>
+
+<div class="filtres">
+  @for (f of filtres; track f.libelle) {
+    <button type="button" [class.actif]="filtre() === f.valeur" (click)="choisirFiltre(f.valeur)">
+      {{ f.libelle }}
+    </button>
+  }
+</div>
+
+@if (erreur()) {
+  <p class="erreur">{{ erreur() }}</p>
+}
+
+@if (chargement()) {
+  <p>Chargement…</p>
+} @else {
+  @for (commande of commandes(); track commande.id) {
+    <article>
+      <header>
+        <h2>Commande n°{{ commande.id }}</h2>
+        <span class="statut" [class]="commande.statut">{{ libelles[commande.statut] }}</span>
+        <time>{{ commande.creeLe | date:'dd/MM/yyyy à HH:mm' }}</time>
+      </header>
+
+      <div class="contenu">
+        <div class="client">
+          <strong>{{ commande.nomClient }}</strong>
+          <a [href]="'mailto:' + commande.email">{{ commande.email }}</a>
+          <span class="adresse">{{ commande.adresse }}</span>
+        </div>
+
+        <ul>
+          @for (ligne of commande.lignes; track $index) {
+            <li>
+              <span>{{ ligne.quantite }} × {{ ligne.nom }} ({{ ligne.taille }})</span>
+              <span>{{ ligne.prixUnitaire * ligne.quantite | currency:'EUR' }}</span>
+            </li>
+          }
+          <li class="total">
+            <span>Total</span>
+            <strong>{{ commande.total | currency:'EUR' }}</strong>
+          </li>
+        </ul>
+      </div>
+
+      @if (commande.statut === 'en_attente') {
+        <footer>
+          <button type="button" class="expedier" (click)="expedier(commande)">Marquer comme expédiée</button>
+          <button type="button" class="annuler" (click)="annuler(commande)">Annuler</button>
+        </footer>
+      }
+    </article>
+  } @empty {
+    <p class="vide">Aucune commande.</p>
+  }
+}

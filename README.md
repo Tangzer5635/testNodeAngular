@@ -8,7 +8,7 @@ Site vitrine de vente de vêtements, avec une partie administration protégée p
 |---|---|
 | `db/` | script SQL de création des tables et des données de départ |
 | `back/` | API REST Express (routes → controllers → services → repositories), authentification JWT |
-| `front/` | application Angular (catalogue avec filtres, fiche produit, panier, connexion, administration) |
+| `front/` | application Angular (catalogue avec filtres, fiche produit, panier, commande, connexion, administration des vêtements et des commandes) |
 
 ## Configuration (dans tous les cas)
 
@@ -77,19 +77,26 @@ La page de connexion est sur `/connexion`.
 | PUT | `/api/vetements/:id` | modifier | **oui** |
 | DELETE | `/api/vetements/:id` | supprimer (204) | **oui** |
 | GET | `/api/categories` | liste des catégories | non |
+| POST | `/api/commandes` | passer commande (201 → `{ id, total }`, 409 si stock insuffisant) | non |
+| GET | `/api/commandes` (option `?statut=en_attente`) | liste des commandes | **oui** |
+| PATCH | `/api/commandes/:id` (`{ "statut": "expediee" }` ou `"annulee"`) | changer le statut (annuler remet en stock) | **oui** |
 | POST | `/api/images` (champ `image`, JPEG/PNG/WebP, 2 Mo max) | envoyer une image → `{ image }` | **oui** |
 | GET | `/images/:fichier` | images des vêtements (`back/public/images` et `back/uploads`) | non |
 
 Jeton : en-tête `Authorization: Bearer <jeton>`.
-Erreurs, toujours en JSON : 400 (données invalides), 401 (non authentifié), 404 (introuvable), 429 (trop de tentatives de connexion : 10 échecs par IP sur 15 min), 500 (erreur serveur).
+Un vêtement contient ses tailles et leur stock : `"tailles": [{ "taille": "M", "stock": 5 }, …]`.
+
+Passer commande : `{ "client": { "nom", "email", "adresse" }, "lignes": [{ "vetementId", "taille", "quantite" }] }`. Le prix n'est **jamais** envoyé par le front : le back le lit dans la base, vérifie et décompte le stock dans une transaction.
+
+Erreurs, toujours en JSON : 400 (données invalides), 401 (non authentifié), 404 (introuvable), 409 (conflit : stock insuffisant, statut impossible), 429 (trop de tentatives de connexion : 10 échecs par IP sur 15 min), 500 (erreur serveur).
 
 ## Accès aux pages
 
 | Page | Visiteur | Admin connecté |
 |---|---|---|
-| `/`, `/vetements/:id`, `/panier` | ✅ | ✅ |
+| `/`, `/vetements/:id`, `/panier`, `/commande` | ✅ | ✅ |
 | `/connexion` | ✅ | ↪ renvoyé vers `/admin` |
-| `/admin`, `/admin/nouveau`, `/admin/:id` | ↪ renvoyé vers `/connexion` (puis ramené à la page demandée) | ✅ |
+| `/admin`, `/admin/nouveau`, `/admin/:id`, `/admin/commandes` | ↪ renvoyé vers `/connexion` (puis ramené à la page demandée) | ✅ |
 
 La session se termine automatiquement à l'expiration du jeton (2 h). L'API vérifie aussi le jeton : masquer les pages côté Angular ne suffirait pas.
 
@@ -123,6 +130,21 @@ Lancer la boutique avec les images publiées, sans rien compiler (il faut `.env`
 ```bash
 docker login ghcr.io -u Tangzer5635      # mot de passe : jeton GitHub avec le droit read:packages
 docker compose -f docker-compose.prod.yaml up -d
+```
+
+## Mettre à jour une base existante (migrations)
+
+`db/init.sql` n'est lu que lorsque la base est **vide**. Pour garder tes données en passant à une nouvelle version,
+lance les scripts de `db/migrations/` (une seule fois, dans l'ordre) :
+
+```powershell
+# PowerShell
+Get-Content db/migrations/v1.5.0-stock-commandes.sql | docker compose exec -T db psql -U postgres -d boutique
+```
+
+```bash
+# Linux / macOS
+docker compose exec -T db psql -U postgres -d boutique < db/migrations/v1.5.0-stock-commandes.sql
 ```
 
 ## Repartir d'une base neuve

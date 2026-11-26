@@ -1,6 +1,9 @@
 <div class="entete">
   <h1>Administration</h1>
-  <a routerLink="/admin/nouveau" class="bouton">+ Ajouter un vêtement</a>
+  <div class="liens">
+    <a routerLink="/admin/commandes" class="bouton secondaire">Commandes</a>
+    <a routerLink="/admin/nouveau" class="bouton">+ Ajouter un vêtement</a>
+  </div>
 </div>
 
 @if (erreur()) {
@@ -13,6 +16,7 @@
       <th>Nom</th>
       <th>Catégorie</th>
       <th>Prix</th>
+      <th>Stock</th>
       <th>Actions</th>
     </tr>
   </thead>
@@ -22,6 +26,13 @@
         <td>{{ vetement.nom }}</td>
         <td>{{ vetement.categorie }}</td>
         <td>{{ vetement.prix | currency:'EUR' }}</td>
+        <td [title]="tailles(vetement)">
+          @if (stockTotal(vetement) === 0) {
+            <span class="epuise">Épuisé</span>
+          } @else {
+            {{ stockTotal(vetement) }}
+          }
+        </td>
         <td class="actions">
           <a routerLink="/admin/{{ vetement.id }}">Modifier</a>
           <button type="button" (click)="supprimer(vetement)">Supprimer</button>
@@ -29,7 +40,7 @@
       </tr>
     } @empty {
       <tr>
-        <td colspan="4">Aucun vêtement.</td>
+        <td colspan="5">Aucun vêtement.</td>
       </tr>
     }
   </tbody>

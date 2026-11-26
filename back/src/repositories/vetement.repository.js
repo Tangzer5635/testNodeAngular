@@ -1,6 +1,16 @@
-import pool from "../config/db.js";
+import pool, { transaction } from '../config/db.js';
 
-const SELECT_VETEMENTS = "SELECT v.id, v.nom, v.prix::Float, v.description, v.image, v.tailles, c.nom AS categorie FROM vetements v JOIN categories c ON v.categorie_id = c.id";
+// « tailles » est construit par PostgreSQL : [{ "taille": "M", "stock": 5 }, …] dans l'ordre d'affichage
+const SELECT_VETEMENTS = `
+  SELECT v.id, v.nom, v.prix::float AS prix, v.description, v.image, c.nom AS categorie,
+    COALESCE(
+      (SELECT json_agg(json_build_object('taille', s.taille, 'stock', s.quantite) ORDER BY s.ordre)
+       FROM stocks s WHERE s.vetement_id = v.id),
+      '[]'
+    ) AS tailles
+  FROM vetements v
+  JOIN categories c ON v.categorie_id = c.id`;
+
 export const TRIS = {
   recent: 'v.id DESC',
   prix_asc: 'v.prix ASC',
@@ -31,29 +41,54 @@ export const findAll = async ({ categorie, recherche, tri = 'recent' } = {}) => 
 };
 
 export const findById = async (id) => {
-    const result = await pool.query(SELECT_VETEMENTS+" WHERE v.id = $1", [id]);
-    return result.rows[0];
-}
+  const result = await pool.query(`${SELECT_VETEMENTS} WHERE v.id = $1`, [id]);
+  return result.rows[0];
+};
 
-export const create = async (vetement) => {
-    const { nom, prix, description, image, tailles, categorie} = vetement;
-    const result = await pool.query(
-        "INSERT INTO vetements (nom, prix, description, image, tailles, categorie_id) VALUES ($1, $2, $3, $4, $5, (SELECT id FROM categories WHERE nom = $6)) RETURNING id",
-        [nom, prix, description, image, tailles, categorie]
-    );
-    return result.rows[0].id
-}
+// Enregistre les tailles d'un vêtement : unnest() transforme les deux listes en lignes,
+// WITH ORDINALITY ajoute leur position (pour garder l'ordre S, M, L, XL)
+const enregistrerStocks = (db, vetementId, tailles) =>
+  db.query(
+    `INSERT INTO stocks (vetement_id, taille, quantite, ordre)
+     SELECT $1, t.taille, t.quantite, t.ordre
+     FROM unnest($2::text[], $3::int[]) WITH ORDINALITY AS t (taille, quantite, ordre)`,
+    [vetementId, tailles.map(t => t.taille), tailles.map(t => t.stock)]
+  );
 
-export const update = async (id, vetement) => {
-    const { nom, prix, description, image, tailles, categorie} = vetement;
-    const result = await pool.query(
-        "UPDATE vetements SET nom = $1, prix = $2, description = $3, image = $4, tailles = $5, categorie_id = (SELECT id FROM categories WHERE nom = $6) WHERE id = $7",
-        [nom, prix, description, image, tailles, categorie, id]
+// Le vêtement et ses stocks sont enregistrés ensemble : si une requête échoue, rien n'est gardé
+export const create = (vetement) =>
+  transaction(async (db) => {
+    const { nom, prix, description, image, tailles, categorie } = vetement;
+    const result = await db.query(
+      `INSERT INTO vetements (nom, prix, description, image, categorie_id)
+       VALUES ($1, $2, $3, $4, (SELECT id FROM categories WHERE nom = $5)) RETURNING id`,
+      [nom, prix, description, image, categorie]
     );
+    const id = result.rows[0].id;
+    await enregistrerStocks(db, id, tailles);
+    return id;
+  });
+
+export const update = (id, vetement) =>
+  transaction(async (db) => {
+    const { nom, prix, description, image, tailles, categorie } = vetement;
+    const result = await db.query(
+      `UPDATE vetements SET nom = $1, prix = $2, description = $3, image = $4,
+         categorie_id = (SELECT id FROM categories WHERE nom = $5)
+       WHERE id = $6`,
+      [nom, prix, description, image, categorie, id]
+    );
+    if (result.rowCount === 0) {
+      return 0;
+    }
+    // Plus simple que de comparer l'ancienne et la nouvelle liste : on remplace toutes les tailles
+    await db.query('DELETE FROM stocks WHERE vetement_id = $1', [id]);
+    await enregistrerStocks(db, id, tailles);
     return result.rowCount;
-}
+  });
 
 export const remove = async (id) => {
-    const result = await pool.query("DELETE FROM vetements WHERE id = $1", [id]);
-    return result.rowCount;
-}
+  // Les stocks sont supprimés automatiquement (ON DELETE CASCADE)
+  const result = await pool.query('DELETE FROM vetements WHERE id = $1', [id]);
+  return result.rowCount;
+};

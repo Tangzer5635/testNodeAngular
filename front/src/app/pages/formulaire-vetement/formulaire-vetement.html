@@ -45,12 +45,23 @@
   }
 </div>
 
-  <label>
-    Tailles (séparées par des virgules)
-    <input type="text" formControlName="tailles" placeholder="S, M, L" />
-  </label>
-  @if (vetementForm.controls.tailles.invalid && vetementForm.controls.tailles.touched) {
-    <small>Indique au moins une taille.</small>
+  <fieldset class="tailles" formArrayName="tailles">
+    <legend>Tailles et stock</legend>
+    <div class="ligne-taille entete-tailles">
+      <span>Taille</span>
+      <span>Stock</span>
+    </div>
+    @for (ligne of tailles.controls; track ligne; let i = $index) {
+      <div class="ligne-taille" [formGroupName]="i">
+        <input type="text" formControlName="taille" placeholder="M" [attr.aria-label]="'Taille ' + (i + 1)" />
+        <input type="number" formControlName="stock" min="0" step="1" [attr.aria-label]="'Stock de la taille ' + (i + 1)" />
+        <button type="button" class="lien" (click)="retirerTaille(i)" [disabled]="tailles.length === 1">Retirer</button>
+      </div>
+    }
+    <button type="button" class="ajouter-taille" (click)="ajouterTaille()">+ Ajouter une taille</button>
+  </fieldset>
+  @if (tailles.invalid && tailles.touched) {
+    <small>Chaque taille doit avoir un nom et un stock (nombre entier, 0 ou plus).</small>
   }
 
   <label>
