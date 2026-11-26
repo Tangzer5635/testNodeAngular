@@ -17,4 +17,16 @@ export class VetementService {
   getById(id: number): Observable<Vetement> {
     return this.http.get<Vetement>(`${this.apiUrl}/${id}`);
   }
+
+  create(vetement: Vetement): Observable<Vetement> {
+    return this.http.post<Vetement>(this.apiUrl, vetement);
+  }
+
+  update(id: number, vetement: Vetement): Observable<Vetement> {
+    return this.http.put<Vetement>(`${this.apiUrl}/${id}`, vetement);
+  } 
+
+  delete(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${id}`);
+  }
 }

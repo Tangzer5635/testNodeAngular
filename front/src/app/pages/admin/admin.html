@@ -1,0 +1,15 @@
+<h1>Voici la page d'administration</h1>
+
+@for (vetement of vetements(); track vetement.id) {
+  <div class="vetement">
+    <h2>{{ vetement.nom }}</h2>
+    <p>{{ vetement.description }}</p>
+    <p>Catégorie : {{ vetement.categorie }}</p>
+    <p>Prix : {{ vetement.prix | currency:'EUR' }}</p>
+    <p>Tailles disponibles : {{ vetement.tailles.join(', ') }}</p>
+    <button (click)="editVetement(vetement.id, vetement)">Modifier</button>
+    <button (click)="deleteVetement(vetement.id)">Supprimer</button>
+  </div>
+} @empty {
+  <p>Aucun vêtement disponible.</p>
+}
