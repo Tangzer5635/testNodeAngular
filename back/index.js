@@ -5,8 +5,10 @@ import categorieRoutes from './src/routes/categorie.routes.js';
 
 const app = express();
 const origin = 'http://localhost:4200';
-app.use(cors({ origin }));
 const PORT = process.env.PORT;
+
+app.use(express.json());
+app.use(cors({ origin }));
 
 app.get('/', (req, res) => {
   res.send('API boutique opérationnelle');
