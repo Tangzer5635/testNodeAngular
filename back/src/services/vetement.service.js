@@ -52,7 +52,7 @@ export const createVetement = async (data) => {
 
 export const updateVetement = async (id, data) => {
   if (!estIdValide(id)) {
-    throw new NotFoundError(`Aucun vêtement avec l'id ${id}`);
+    throw new NotFoundError('Aucun vêtement avec cet identifiant');
   }
   await validerVetement(data);
   const lignesModifiees = await vetementRepository.update(id, data);
@@ -64,7 +64,7 @@ export const updateVetement = async (id, data) => {
 
 export const deleteVetement = async (id) => {
   if (!estIdValide(id)) {
-    throw new NotFoundError(`Aucun vêtement avec l'id ${id}`);
+    throw new NotFoundError('Aucun vêtement avec cet identifiant');
   }
   const lignesSupprimees = await vetementRepository.remove(id);
   if (lignesSupprimees === 0) {

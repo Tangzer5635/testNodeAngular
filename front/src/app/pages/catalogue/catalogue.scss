@@ -48,3 +48,22 @@ li {
     font-size: 1.1rem;
   }
 }
+.vignette {
+  display: block;
+  margin-bottom: v.$espace * 0.75;
+
+  img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    border-radius: v.$rayon * 0.6;
+  }
+}
+
+.erreur {
+  padding: v.$espace;
+  background-color: #fdecea;
+  color: #b3261e;
+  border-radius: v.$rayon;
+}

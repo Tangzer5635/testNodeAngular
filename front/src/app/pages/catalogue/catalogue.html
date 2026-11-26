@@ -1,12 +1,24 @@
 <h1>Catalogue</h1>
-<ul>@for (vetement of vetements(); track vetement.id) {
-    <li>
+
+@if (erreur()) {
+  <p class="erreur">{{ erreur() }}</p>
+} @else if (chargement()) {
+  <p>Chargement…</p>
+} @else {
+  <ul>
+    @for (vetement of vetements(); track vetement.id) {
+      <li>
+        <a routerLink="/vetements/{{ vetement.id }}" class="vignette">
+          @if (vetement.image) {
+            <img [src]="imagesUrl + '/' + vetement.image" [alt]="vetement.nom" loading="lazy" />
+          }
+        </a>
         <h2><a routerLink="/vetements/{{ vetement.id }}">{{ vetement.nom }}</a></h2>
         <p>{{ vetement.categorie }}</p>
         <p>{{ vetement.prix | currency:'EUR' }}</p>
-    </li>
+      </li>
+    } @empty {
+      <li>Aucun article disponible</li>
+    }
+  </ul>
 }
-@empty {
-  <li>Aucun article disponible</li>
-}
-</ul>

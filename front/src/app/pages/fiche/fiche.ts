@@ -3,6 +3,7 @@ import { VetementService } from '../../services/vetement';
 import { Vetement } from '../../models/vetement';
 import { CurrencyPipe } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-fiche',
@@ -15,6 +16,7 @@ export class Fiche {
   private route = inject(ActivatedRoute);
   protected vetement = signal<Vetement | null>(null);
   protected erreur = signal<string | null>(null);
+  protected imagesUrl = environment.imagesUrl;
 
 constructor() {
   const id = Number(this.route.snapshot.paramMap.get('id'));
