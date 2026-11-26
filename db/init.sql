@@ -14,6 +14,12 @@ CREATE TABLE IF NOT EXISTS vetements (
     categorie_id INT NOT NULL REFERENCES categories (id)
 );
 
+CREATE TABLE IF NOT EXISTS utilisateurs (
+    id       INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    email    TEXT NOT NULL UNIQUE,
+    mot_de_passe_hash TEXT NOT NULL
+);
+
 INSERT INTO categories (nom) VALUES
     ('t-shirts'),
     ('pantalons'),
