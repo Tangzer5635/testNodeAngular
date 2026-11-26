@@ -1,16 +1,47 @@
+# Variables lues dans le fichier .env à la racine du projet (voir .env.example)
 services:
   db:
     image: postgres:17
+    restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
-      # Lu dans le fichier .env à la racine du projet (voir .env.example)
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Définis POSTGRES_PASSWORD dans le fichier .env à la racine du projet}
       POSTGRES_DB: boutique
     ports:
-      - "5433:5432"
+      - "5433:5432" # utile pour le développement (back lancé avec npm run dev)
     volumes:
       - db_data:/var/lib/postgresql/data
       - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d boutique"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  back:
+    build: ./back
+    restart: unless-stopped
+    environment:
+      DB_HOST: db # nom du service : Docker le résout en adresse IP
+      DB_PORT: 5432 # port INTERNE du conteneur db (pas le 5433 de ta machine)
+      DB_USER: postgres
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_NAME: boutique
+      PORT: 3000
+      JWT_SECRET: ${JWT_SECRET:?Définis JWT_SECRET dans le fichier .env à la racine du projet}
+      JWT_EXPIRES_IN: 2h
+      CORS_ORIGIN: http://localhost:8080
+    depends_on:
+      db:
+        condition: service_healthy # attend que Postgres accepte les connexions
+
+  front:
+    build: ./front
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    depends_on:
+      - back
 
 volumes:
   db_data:

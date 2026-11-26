@@ -6,6 +6,11 @@ import categorieRoutes from './src/routes/categorie.routes.js';
 import authRoutes from './src/routes/auth.routes.js';
 import { routeIntrouvable, gestionnaireErreurs } from './src/middlewares/erreurs.js';
 
+if (!process.env.JWT_SECRET) {
+  console.error('JWT_SECRET manquant : ajoute-le dans back/.env (voir .env.example)');
+  process.exit(1);
+}
+
 const app = express();
 const PORT = process.env.PORT;
 const CORS_ORIGIN = process.env.CORS_ORIGIN ?? 'http://localhost:4200';
