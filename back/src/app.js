@@ -14,7 +14,7 @@ const app = express();
 app.disable('x-powered-by');
 app.set('trust proxy', 'loopback, uniquelocal');
 
-app.use(cors({ origin: process.env.CORS_ORIGIN ?? 'http://localhost:4200' }));
+app.use(cors({ origin: process.env.CORS_ORIGIN ?? 'http://localhost:4200', exposedHeaders: ['X-Total-Count'] }));
 app.use(express.json());
 app.use('/images', express.static(path.join(import.meta.dirname, '..', 'public', 'images')));
 app.use('/images', express.static(DOSSIER_UPLOADS));

@@ -85,11 +85,67 @@ export const passerCommande = async (data, utilisateur) => {
 
 export const getCommandesDe = async (utilisateurId) => commandeRepository.findAll({ utilisateurId });
 
-export const getCommandes = async ({ statut } = {}) => {
+export const PAR_PAGE = 20;
+
+const DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+const estDateReelle = (valeur) => {
+  const date = new Date(`${valeur}T00:00:00Z`);
+  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === valeur;
+};
+
+const validerDate = (valeur, nom) => {
+  if (valeur === undefined || valeur === '') {
+    return undefined;
+  }
+  if (typeof valeur !== 'string' || !DATE.test(valeur) || !estDateReelle(valeur)) {
+    throw new ValidationError(`La date « ${nom} » doit être au format AAAA-MM-JJ`);
+  }
+  return valeur;
+};
+
+const validerFiltres = ({ recherche, du, au }) => {
+  if (recherche !== undefined && (typeof recherche !== 'string' || recherche.length > 100)) {
+    throw new ValidationError('La recherche doit être un texte de 100 caractères maximum');
+  }
+  const filtres = {
+    recherche: recherche?.trim() || undefined,
+    du: validerDate(du, 'du'),
+    au: validerDate(au, 'au'),
+  };
+  if (filtres.du && filtres.au && filtres.du > filtres.au) {
+    throw new ValidationError('La date de début doit être avant la date de fin');
+  }
+  return filtres;
+};
+
+export const getCommandes = async ({ statut, page, tri, ...criteres } = {}) => {
   if (statut !== undefined && !Object.hasOwn(TRANSITIONS, statut)) {
     throw new ValidationError(`Statut inconnu : ${statut}`);
   }
-  return commandeRepository.findAll({ statut });
+  const numero = page === undefined ? 1 : Number(page);
+  if (!Number.isInteger(numero) || numero < 1) {
+    throw new ValidationError('La page doit être un nombre entier à partir de 1');
+  }
+  const triChoisi = tri ?? 'recent';
+  if (!Object.hasOwn(commandeRepository.TRIS, triChoisi)) {
+    throw new ValidationError(`Tri inconnu. Valeurs acceptées : ${Object.keys(commandeRepository.TRIS).join(', ')}`);
+  }
+  const filtres = { ...validerFiltres(criteres), statut };
+  const [commandes, total] = await Promise.all([
+    commandeRepository.findAll({ ...filtres, tri: triChoisi, limite: PAR_PAGE, decalage: (numero - 1) * PAR_PAGE }),
+    commandeRepository.compter(filtres),
+  ]);
+  return { commandes, total };
+};
+
+export const getCompteurs = async (criteres = {}) => {
+  const lignes = await commandeRepository.compterParStatut(validerFiltres(criteres));
+  const compteurs = { en_attente: 0, expediee: 0, annulee: 0 };
+  for (const { statut, nombre } of lignes) {
+    compteurs[statut] = nombre;
+  }
+  return { ...compteurs, total: compteurs.en_attente + compteurs.expediee + compteurs.annulee };
 };
 
 export const changerStatut = async (id, statut) => {

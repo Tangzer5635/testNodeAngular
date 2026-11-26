@@ -13,19 +13,74 @@ const SELECT_COMMANDES = `
   FROM commandes c
   LEFT JOIN lignes_commande l ON l.commande_id = c.id`;
 
-export const findAll = async ({ statut, utilisateurId } = {}) => {
+export const TRIS = {
+  recent: 'c.id DESC',
+  ancien: 'c.id ASC',
+  montant_desc: 'c.total DESC, c.id DESC',
+  montant_asc: 'c.total ASC, c.id DESC',
+};
+
+const filtrer = ({ statut, utilisateurId, recherche, du, au }) => {
   const conditions = [];
   const valeurs = [];
+  const ajouter = (valeur) => {
+    valeurs.push(valeur);
+    return `$${valeurs.length}`;
+  };
   if (statut) {
-    valeurs.push(statut);
-    conditions.push(`c.statut = $${valeurs.length}`);
+    conditions.push(`c.statut = ${ajouter(statut)}`);
   }
   if (utilisateurId) {
-    valeurs.push(utilisateurId);
-    conditions.push(`c.utilisateur_id = $${valeurs.length}`);
+    conditions.push(`c.utilisateur_id = ${ajouter(utilisateurId)}`);
   }
-  const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
-  const result = await pool.query(`${SELECT_COMMANDES} ${where} GROUP BY c.id ORDER BY c.id DESC`, valeurs);
+  if (recherche) {
+    const texte = ajouter(`%${recherche}%`);
+    const criteres = [
+      `c.nom_client ILIKE ${texte}`,
+      `c.email ILIKE ${texte}`,
+      `EXISTS (SELECT 1 FROM lignes_commande lr WHERE lr.commande_id = c.id AND lr.nom ILIKE ${texte})`,
+    ];
+    const numero = recherche.match(/^(?:n°|#)?\s*(\d{1,9})$/i);
+    if (numero) {
+      criteres.push(`c.id = ${ajouter(Number(numero[1]))}`);
+    }
+    conditions.push(`(${criteres.join(' OR ')})`);
+  }
+  if (du) {
+    conditions.push(`c.cree_le >= ${ajouter(du)}::date`);
+  }
+  if (au) {
+    conditions.push(`c.cree_le < ${ajouter(au)}::date + 1`);
+  }
+  return { where: conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '', valeurs };
+};
+
+export const findAll = async ({ limite, decalage = 0, tri = 'recent', ...filtres } = {}) => {
+  const { where, valeurs } = filtrer(filtres);
+  let pagination = '';
+  if (limite) {
+    valeurs.push(limite, decalage);
+    pagination = `LIMIT $${valeurs.length - 1} OFFSET $${valeurs.length}`;
+  }
+  const result = await pool.query(
+    `${SELECT_COMMANDES} ${where} GROUP BY c.id ORDER BY ${TRIS[tri]} ${pagination}`,
+    valeurs
+  );
+  return result.rows;
+};
+
+export const compter = async (filtres = {}) => {
+  const { where, valeurs } = filtrer(filtres);
+  const result = await pool.query(`SELECT COUNT(*)::int AS total FROM commandes c ${where}`, valeurs);
+  return result.rows[0].total;
+};
+
+export const compterParStatut = async ({ statut, ...filtres } = {}) => {
+  const { where, valeurs } = filtrer(filtres);
+  const result = await pool.query(
+    `SELECT c.statut, COUNT(*)::int AS nombre FROM commandes c ${where} GROUP BY c.statut`,
+    valeurs
+  );
   return result.rows;
 };
 

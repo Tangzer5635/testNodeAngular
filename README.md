@@ -80,8 +80,18 @@ La page de connexion est sur `/connexion`.
 | GET | `/api/categories` | liste des catégories | non |
 | POST | `/api/commandes` | passer commande (201 → `{ id, total }`, 409 si stock insuffisant) ; liée au compte si un jeton est envoyé | non |
 | GET | `/api/commandes/miennes` | commandes du client connecté | client |
-| GET | `/api/commandes` (option `?statut=en_attente`) | liste des commandes | admin |
+| GET | `/api/commandes` (options `statut`, `recherche`, `du`, `au`, `tri`, `page`) | liste paginée par 20, total dans l'en-tête `X-Total-Count` | admin |
+| GET | `/api/commandes/compteurs` (options `recherche`, `du`, `au`) | nombre de commandes par statut → `{ en_attente, expediee, annulee, total }` | admin |
 | PATCH | `/api/commandes/:id` (`{ "statut": "expediee" }` ou `"annulee"`) | changer le statut (annuler remet en stock) | admin |
+
+Filtres de `/api/commandes` :
+
+| Paramètre | Exemple | Effet |
+|-----------|---------|-------|
+| `recherche` | `dupont`, `gmail.com`, `#2961`, `manteau` | nom du client, email, numéro de commande ou nom d'un article |
+| `du`, `au` | `2025-12-01` | période (dates incluses, format AAAA-MM-JJ) |
+| `tri` | `recent` (défaut), `ancien`, `montant_desc`, `montant_asc` | ordre de la liste |
+| `statut` | `en_attente`, `expediee`, `annulee` | sans ce paramètre : toutes les commandes |
 | POST | `/api/images` (champ `image`, JPEG/PNG/WebP, 2 Mo max) | envoyer une image → `{ image }` | admin |
 | GET | `/images/:fichier` | images des vêtements (`back/public/images` et `back/uploads`) | non |
 
@@ -156,6 +166,7 @@ lance les scripts de `db/migrations/` (une seule fois, dans l'ordre) :
 |---|---|
 | v1.5.0 | `db/migrations/v1.5.0-stock-commandes.sql` |
 | v2.1.0 | `db/migrations/v2.1.0-comptes-clients.sql` |
+| v2.2.0 | `db/migrations/v2.2.0-index.sql` |
 
 ```powershell
 # PowerShell
@@ -166,6 +177,19 @@ Get-Content db/migrations/v2.1.0-comptes-clients.sql | docker compose exec -T db
 # Linux / macOS
 docker compose exec -T db psql -U postgres -d boutique < db/migrations/v2.1.0-comptes-clients.sql
 ```
+
+## Remplir avec un gros jeu de données
+
+`scripts/seed.js` remplace le catalogue, les clients et les commandes par un jeu de démonstration réaliste
+(les comptes admin sont gardés) : 41 vêtements avec leurs photos, 400 clients, 3 000 commandes réparties sur un an
+(pic à Noël, soldes de janvier, plus de commandes le week-end). Le résultat est identique à chaque lancement.
+
+```bash
+cd back && npm run seed -- --remplacer                               # développement
+docker compose exec back node scripts/seed.js --remplacer           # Docker
+```
+
+Tous les clients de démonstration ont le mot de passe `motdepasse1`.
 
 ## Repartir d'une base neuve
 

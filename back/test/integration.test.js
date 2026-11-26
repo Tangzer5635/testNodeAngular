@@ -410,6 +410,69 @@ describe('API avec une vraie base de données', { skip: actif ? false : 'base de
       assert.equal((await appeler('GET', '/api/commandes?statut=perdue', { jeton: jetonAdmin })).status, 400);
     });
 
+    test("la liste de l'admin est paginée par 20, avec le total dans l'en-tête X-Total-Count", async () => {
+      const { body: stockable } = await appeler('POST', '/api/vetements', {
+        jeton: jetonAdmin,
+        corps: vetementTest('Stock de test', [{ taille: 'M', stock: 100 }]),
+      });
+      for (let i = 0; i < 22; i++) {
+        assert.equal((await commander([{ vetementId: stockable.id, taille: 'M', quantite: 1 }])).status, 201);
+      }
+      const page1 = await fetch(`${url}/api/commandes`, { headers: { Authorization: `Bearer ${jetonAdmin}`, 'X-Forwarded-For': '10.9.9.1' } });
+      const total = Number(page1.headers.get('x-total-count'));
+      const liste1 = await page1.json();
+      assert.equal(liste1.length, 20);
+      assert.ok(total > 20);
+
+      const page2 = await appeler('GET', '/api/commandes?page=2', { jeton: jetonAdmin });
+      assert.equal(page2.body.length, Math.min(20, total - 20));
+      assert.equal(page2.body[0].id < liste1.at(-1).id, true);
+      assert.equal((await appeler('GET', '/api/commandes?page=0', { jeton: jetonAdmin })).status, 400);
+    });
+
+    test('recherche par nom de client, sans tenir compte des majuscules', async () => {
+      const { body } = await appeler('GET', '/api/commandes?recherche=HUGO', { jeton: jetonAdmin });
+      assert.ok(body.length >= 1);
+      assert.ok(body.every(c => /hugo/i.test(c.nomClient) || /hugo/i.test(c.email)));
+    });
+
+    test('recherche par numéro de commande (12, #12 ou n°12)', async () => {
+      for (const texte of ['3', '#3', 'n°3']) {
+        const { body } = await appeler('GET', `/api/commandes?recherche=${encodeURIComponent(texte)}`, { jeton: jetonAdmin });
+        assert.ok(body.some(c => c.id === 3), texte);
+      }
+    });
+
+    test("recherche par nom d'article", async () => {
+      const { body } = await appeler('GET', '/api/commandes?recherche=cargo', { jeton: jetonAdmin });
+      assert.ok(body.length >= 1);
+      assert.ok(body.every(c => c.lignes.some(l => /cargo/i.test(l.nom))));
+    });
+
+    test('filtre par période', async () => {
+      await pool.query("UPDATE commandes SET cree_le = '2025-12-24 10:00+00' WHERE id = 1");
+      const noel = await appeler('GET', '/api/commandes?du=2025-12-24&au=2025-12-24', { jeton: jetonAdmin });
+      assert.deepEqual(noel.body.map(c => c.id), [1]);
+      const apres = await appeler('GET', '/api/commandes?du=2025-12-25', { jeton: jetonAdmin });
+      assert.ok(apres.body.every(c => c.id !== 1));
+    });
+
+    test('tri par montant décroissant', async () => {
+      const { body } = await appeler('GET', '/api/commandes?tri=montant_desc', { jeton: jetonAdmin });
+      const montants = body.map(c => c.total);
+      assert.deepEqual(montants, [...montants].sort((a, b) => b - a));
+    });
+
+    test('les compteurs par statut suivent la recherche', async () => {
+      const tout = await appeler('GET', '/api/commandes/compteurs', { jeton: jetonAdmin });
+      assert.equal(tout.body.total, tout.body.en_attente + tout.body.expediee + tout.body.annulee);
+      const enAttente = await fetch(`${url}/api/commandes?statut=en_attente`, { headers: { Authorization: `Bearer ${jetonAdmin}`, 'X-Forwarded-For': '10.9.9.2' } });
+      assert.equal(Number(enAttente.headers.get('x-total-count')), tout.body.en_attente);
+
+      const hugo = await appeler('GET', '/api/commandes/compteurs?recherche=hugo', { jeton: jetonAdmin });
+      assert.ok(hugo.body.total >= 1 && hugo.body.total < tout.body.total);
+    });
+
     test('annuler une commande remet les articles en stock', async () => {
       const avant = await stock(7, 'M');
       const { body } = await commander([{ vetementId: 7, taille: 'M', quantite: 3 }]);

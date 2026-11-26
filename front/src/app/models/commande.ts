@@ -30,3 +30,21 @@ export interface NouvelleCommande {
   client: { nom: string; email: string; adresse: string };
   lignes: { vetementId: number; taille: string; quantite: number }[];
 }
+
+export type TriCommandes = 'recent' | 'ancien' | 'montant_desc' | 'montant_asc';
+
+export interface FiltresCommandes {
+  statut?: StatutCommande;
+  recherche?: string;
+  du?: string;
+  au?: string;
+  tri?: TriCommandes;
+  page?: number;
+}
+
+export interface CompteursCommandes {
+  en_attente: number;
+  expediee: number;
+  annulee: number;
+  total: number;
+}

@@ -11,7 +11,8 @@
     "test:bdd": "node --env-file .env.test --test --test-concurrency=1",
     "start": "node --env-file .env index.js",
     "dev": "node --env-file .env --watch index.js ",
-    "creer-admin": "node --env-file .env scripts/creer-admin.js"
+    "creer-admin": "node --env-file .env scripts/creer-admin.js",
+    "seed": "node --env-file .env scripts/seed.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

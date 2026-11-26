@@ -3,11 +3,40 @@
   <a routerLink="/admin" class="retour">← Vêtements</a>
 </div>
 
-<div class="filtres">
-  @for (f of filtres; track f.libelle) {
-    <button type="button" [class.actif]="filtre() === f.valeur" (click)="choisirFiltre(f.valeur)">
-      {{ f.libelle }}
+<div class="statuts">
+  @for (s of statuts; track s.valeur) {
+    <button type="button" [class.actif]="etat().statut === s.valeur" (click)="choisirStatut(s.valeur)">
+      {{ s.libelle }}
+      @if (compteurs(); as c) {
+        <span class="nombre">{{ nombre(c, s.valeur) }}</span>
+      }
     </button>
+  }
+</div>
+
+<div class="outils">
+  <input
+    type="search"
+    class="recherche"
+    [formControl]="recherche"
+    placeholder="Client, email, n° de commande ou article"
+    aria-label="Rechercher une commande"
+  />
+  <label>
+    Du
+    <input type="date" [value]="etat().du" [max]="etat().au || null" (change)="changerDate('du', $event)" />
+  </label>
+  <label>
+    Au
+    <input type="date" [value]="etat().au" [min]="etat().du || null" (change)="changerDate('au', $event)" />
+  </label>
+  <select aria-label="Trier les commandes" (change)="changerTri($event)">
+    @for (t of tris; track t.valeur) {
+      <option [value]="t.valeur" [selected]="etat().tri === t.valeur">{{ t.libelle }}</option>
+    }
+  </select>
+  @if (filtresActifs()) {
+    <button type="button" class="effacer" (click)="effacer()">Effacer les filtres</button>
   }
 </div>
 
@@ -16,8 +45,10 @@
 }
 
 @if (chargement()) {
-  <p>Chargement…</p>
+  <p class="compteur">Chargement…</p>
 } @else {
+  <p class="compteur">{{ total() }} commande{{ total() > 1 ? 's' : '' }}</p>
+
   @for (commande of commandes(); track commande.id) {
     <article>
       <header>
@@ -56,6 +87,19 @@
       }
     </article>
   } @empty {
-    <p class="vide">Aucune commande.</p>
+    <div class="vide">
+      <p>Aucune commande ne correspond à ces filtres.</p>
+      @if (filtresActifs()) {
+        <button type="button" class="effacer" (click)="effacer()">Effacer les filtres</button>
+      }
+    </div>
+  }
+
+  @if (nbPages() > 1) {
+    <nav class="pagination" aria-label="Pages">
+      <button type="button" (click)="allerA(etat().page - 1)" [disabled]="etat().page === 1">Précédente</button>
+      <span>Page {{ etat().page }} sur {{ nbPages() }}</span>
+      <button type="button" (click)="allerA(etat().page + 1)" [disabled]="etat().page >= nbPages()">Suivante</button>
+    </nav>
   }
 }

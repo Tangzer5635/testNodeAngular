@@ -229,6 +229,35 @@ test('un statut inconnu est refusé (400)', async () => {
   assert.equal(reponse.status, 400);
 });
 
+const listeAdmin = (requete) => fetch(`${url}/api/commandes${requete}`, { headers: { Authorization: `Bearer ${jetonValide()}` } });
+
+test('filtre des commandes : une date au mauvais format est refusée (400)', async () => {
+  assert.equal((await listeAdmin('?du=26/11/2026')).status, 400);
+});
+
+test('filtre des commandes : une date impossible (30 février, mois 13) est refusée (400)', async () => {
+  assert.equal((await listeAdmin('?du=2026-02-30')).status, 400);
+  assert.equal((await listeAdmin('?au=2026-13-01')).status, 400);
+});
+
+test('filtre des commandes : une période à l\'envers est refusée (400)', async () => {
+  assert.equal((await listeAdmin('?du=2026-05-01&au=2026-01-01')).status, 400);
+});
+
+test('filtre des commandes : un tri inconnu est refusé (400)', async () => {
+  assert.equal((await listeAdmin('?tri=total;DROP TABLE commandes')).status, 400);
+});
+
+test('filtre des commandes : une recherche trop longue est refusée (400)', async () => {
+  assert.equal((await listeAdmin(`?recherche=${'a'.repeat(101)}`)).status, 400);
+});
+
+test('les compteurs de commandes sont réservés à l\'admin', async () => {
+  assert.equal((await fetch(`${url}/api/commandes/compteurs`)).status, 401);
+  const client = await fetch(`${url}/api/commandes/compteurs`, { headers: { Authorization: `Bearer ${jetonDe('client')}` } });
+  assert.equal(client.status, 403);
+});
+
 test('après 10 connexions ratées, la 11e est bloquée (429)', async () => {
   let derniere;
   for (let i = 0; i < 10; i++) {

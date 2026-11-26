@@ -9,6 +9,7 @@ router.post('/', limiteCommandes, tokenOptionnel, commandeController.passer);
 router.get('/miennes', verifierToken, commandeController.getMiennes);
 
 router.get('/', admin, commandeController.getAll);
+router.get('/compteurs', admin, commandeController.getCompteurs);
 router.patch('/:id', admin, commandeController.changerStatut);
 
 export default router;
