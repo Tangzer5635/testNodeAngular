@@ -27,3 +27,12 @@ a {
   font-weight: 600;
   border-radius: v.$rayon;
 }
+img {
+  display: block;
+  width: 100%;
+  max-width: 360px;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: v.$rayon;
+  margin-bottom: v.$espace;
+}

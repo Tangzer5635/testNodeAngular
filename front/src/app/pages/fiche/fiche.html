@@ -1,6 +1,9 @@
 @if (erreur()) {
   <p>{{ erreur() }}</p>
 } @else if (vetement(); as v) {
+  @if (v.image) {
+    <img [src]="imagesUrl + '/' + v.image" [alt]="v.nom" />
+  }
   <h1>{{ v.nom }}</h1>
   <p>{{ v.description }}</p>
   <p>Catégorie : {{ v.categorie }}</p>

@@ -3,7 +3,8 @@ services:
     image: postgres:17
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: azerty+35
+      # Lu dans le fichier .env à la racine du projet (voir .env.example)
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Définis POSTGRES_PASSWORD dans le fichier .env à la racine du projet}
       POSTGRES_DB: boutique
     ports:
       - "5433:5432"
