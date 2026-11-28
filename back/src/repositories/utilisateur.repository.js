@@ -1,20 +1,23 @@
-import pool from '../config/db.js';
+import prisma from '../config/prisma.js';
 
-export const findByEmail = async (email) => {
-  const result = await pool.query(
-    'SELECT id, email, nom, role, mot_de_passe_hash FROM utilisateurs WHERE email = $1',
-    [email]
-  );
-  return result.rows[0];
-};
+const PUBLIC = { id: true, email: true, nom: true, role: true };
+
+export const findByEmail = (email) =>
+  prisma.utilisateur.findUnique({
+    where: { email },
+    select: { ...PUBLIC, motDePasseHash: true },
+  });
 
 export const create = async ({ email, nom, motDePasseHash }) => {
-  const result = await pool.query(
-    `INSERT INTO utilisateurs (email, nom, mot_de_passe_hash, role)
-     VALUES ($1, $2, $3, 'client')
-     ON CONFLICT (email) DO NOTHING
-     RETURNING id, email, nom, role`,
-    [email, nom, motDePasseHash]
-  );
-  return result.rows[0];
+  try {
+    return await prisma.utilisateur.create({
+      data: { email, nom, motDePasseHash, role: 'client' },
+      select: PUBLIC,
+    });
+  } catch (error) {
+    if (error.code === 'P2002') {
+      return undefined;
+    }
+    throw error;
+  }
 };

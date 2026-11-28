@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs';
-import pool from '../src/config/db.js';
+import prisma from '../src/config/prisma.js';
 
 const [, , email, motDePasse] = process.argv;
 
@@ -8,14 +8,14 @@ if (!email || !motDePasse) {
   process.exit(1);
 }
 
-const hash = await bcrypt.hash(motDePasse, 10);
+const adresse = email.trim().toLowerCase();
+const motDePasseHash = await bcrypt.hash(motDePasse, 10);
 
-await pool.query(
-  `INSERT INTO utilisateurs (email, nom, mot_de_passe_hash, role)
-   VALUES ($1, 'Administrateur', $2, 'admin')
-   ON CONFLICT (email) DO UPDATE SET mot_de_passe_hash = EXCLUDED.mot_de_passe_hash, role = 'admin'`,
-  [email.trim().toLowerCase(), hash]
-);
+await prisma.utilisateur.upsert({
+  where: { email: adresse },
+  create: { email: adresse, nom: 'Administrateur', motDePasseHash, role: 'admin' },
+  update: { motDePasseHash, role: 'admin' },
+});
 
 console.log(`Administrateur enregistré : ${email}`);
-await pool.end();
+await prisma.$disconnect();

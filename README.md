@@ -1,4 +1,4 @@
-# Boutique de vêtements — Node.js / Express / PostgreSQL / Angular
+# Boutique de vêtements — Node.js / Express / Prisma / PostgreSQL / Angular
 
 [![CI/CD](https://github.com/Tangzer5635/testNodeAngular/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/Tangzer5635/testNodeAngular/actions/workflows/ci-cd.yml)
 
@@ -7,7 +7,7 @@ Site vitrine de vente de vêtements, avec une partie administration protégée p
 | Dossier | Contenu |
 |---|---|
 | `db/` | script SQL de création des tables et des données de départ |
-| `back/` | API REST Express (routes → controllers → services → repositories), authentification JWT |
+| `back/` | API REST Express (routes → controllers → services → repositories), accès à la base avec Prisma, authentification JWT |
 | `front/` | application Angular (catalogue avec filtres, fiche produit, panier, commande, connexion, administration des vêtements et des commandes) |
 
 ## Configuration (dans tous les cas)
@@ -156,6 +156,29 @@ Lancer la boutique avec les images publiées, sans rien compiler (il faut `.env`
 docker login ghcr.io -u Tangzer5635      # mot de passe : jeton GitHub avec le droit read:packages
 docker compose -f docker-compose.prod.yaml up -d
 ```
+
+## Accès à la base : Prisma
+
+Le back passe par l'ORM [Prisma](https://www.prisma.io/) (l'équivalent de JPA/Hibernate en Spring Boot) :
+
+| Fichier | Rôle |
+|---|---|
+| `back/prisma/schema.prisma` | les modèles (`Vetement`, `Stock`, `Commande`…) reliés aux tables de `db/init.sql` |
+| `back/prisma.config.js` | où trouver le schéma, et l'adresse de la base pour la CLI (construite depuis le `.env`) |
+| `back/src/config/prisma.js` | le client Prisma utilisé par les repositories |
+| `back/src/generated/prisma/` | le client généré à partir du schéma (non versionné) |
+
+Le client est généré automatiquement par `npm install`. Après une modification de `schema.prisma` :
+
+```bash
+cd back
+npx prisma generate   # régénère le client
+npm run studio        # interface web pour parcourir et modifier les données
+```
+
+Les tables sont toujours créées par `db/init.sql` et mises à jour par `db/migrations/`. Pour ajouter une colonne :
+écrire la migration SQL, l'appliquer, puis la déclarer dans `schema.prisma` (ou lancer `npx prisma db pull`, qui relit
+la base) et régénérer le client.
 
 ## Mettre à jour une base existante (migrations)
 

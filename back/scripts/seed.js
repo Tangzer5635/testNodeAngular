@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs';
-import pool, { transaction } from '../src/config/db.js';
+import prisma from '../src/config/prisma.js';
 import { CATALOGUE, CATEGORIES, DOMAINES, NOMS, PRENOMS, RUES, TAILLES, VILLES } from './donnees.js';
 
 const NB_CLIENTS = 400;
@@ -119,86 +119,75 @@ const genererCommandes = (catalogue, clients, emailsPris) => {
 
 const enCentimes = (prix) => Math.round(prix * 100);
 
-const inserer = async (catalogue, clients, commandes, hash) =>
-  transaction(async (db) => {
-    await db.query('TRUNCATE lignes_commande, commandes, stocks, vetements, categories RESTART IDENTITY CASCADE');
-    await db.query("DELETE FROM utilisateurs WHERE role = 'client'");
+const inserer = (catalogue, clients, commandes, hash) =>
+  prisma.$transaction(async (tx) => {
+    await tx.$executeRaw`TRUNCATE lignes_commande, commandes, stocks, vetements, categories RESTART IDENTITY CASCADE`;
+    await tx.utilisateur.deleteMany({ where: { role: 'client' } });
 
-    await db.query('INSERT INTO categories (nom) SELECT unnest($1::text[])', [CATEGORIES]);
+    await tx.categorie.createMany({ data: CATEGORIES.map(nom => ({ nom })) });
+    const idCategorie = new Map((await tx.categorie.findMany()).map(c => [c.nom, c.id]));
 
-    const vetements = await db.query(
-      `INSERT INTO vetements (nom, description, prix, image, categorie_id)
-       SELECT v.nom, v.description, v.prix, v.image, c.id
-       FROM unnest($1::text[], $2::text[], $3::numeric[], $4::text[], $5::text[]) WITH ORDINALITY AS v (nom, description, prix, image, categorie, n)
-       JOIN categories c ON c.nom = v.categorie
-       ORDER BY v.n
-       RETURNING id, nom`,
-      [catalogue.map(v => v.nom), catalogue.map(v => v.description), catalogue.map(v => v.prix), catalogue.map(v => v.image), catalogue.map(v => v.categorie)]
-    );
-    const idVetement = new Map(vetements.rows.map(r => [r.nom, r.id]));
+    const vetements = await tx.vetement.createManyAndReturn({
+      data: catalogue.map(v => ({
+        nom: v.nom,
+        description: v.description,
+        prix: v.prix,
+        image: v.image,
+        categorieId: idCategorie.get(v.categorie),
+      })),
+      select: { id: true, nom: true },
+    });
+    const idVetement = new Map(vetements.map(v => [v.nom, v.id]));
 
-    const stocks = catalogue.flatMap(v => v.stocks.map(s => ({ ...s, id: idVetement.get(v.nom) })));
-    await db.query(
-      `INSERT INTO stocks (vetement_id, taille, quantite, ordre)
-       SELECT * FROM unnest($1::int[], $2::text[], $3::int[], $4::int[])`,
-      [stocks.map(s => s.id), stocks.map(s => s.taille), stocks.map(s => s.quantite), stocks.map(s => s.ordre)]
-    );
-
-    const inscrits = clients.map(c => ({
-      ...c,
-      creeLe: new Date((c.premiere ?? maintenant - entier(1, JOURS) * JOUR) - entier(0, 30) * JOUR),
-    }));
-    const utilisateurs = await db.query(
-      `INSERT INTO utilisateurs (email, nom, mot_de_passe_hash, role, cree_le)
-       SELECT email, nom, $3, 'client', cree_le FROM unnest($1::text[], $2::text[], $4::timestamptz[]) AS u (email, nom, cree_le)
-       RETURNING id, email`,
-      [inscrits.map(c => c.email), inscrits.map(c => c.nom), hash, inscrits.map(c => c.creeLe)]
-    );
-    const idClient = new Map(utilisateurs.rows.map(r => [r.email, r.id]));
-
-    const lignesPlates = [];
-    const entetes = commandes.map((c, i) => {
-      const id = i + 1;
-      const qui = c.client ?? c.invite;
-      let total = 0;
-      for (const l of c.lignes) {
-        total += enCentimes(l.vetement.prix) * l.quantite;
-        lignesPlates.push({ commande: id, vetement: idVetement.get(l.vetement.nom), nom: l.vetement.nom, taille: l.taille, prix: l.vetement.prix, quantite: l.quantite });
-      }
-      return {
-        id,
-        utilisateur: c.client ? idClient.get(c.client.email) : null,
-        nom: qui.nom,
-        email: qui.email,
-        adresse: qui.adresse,
-        total: (total / 100).toFixed(2),
-        statut: c.statut,
-        date: c.date,
-      };
+    await tx.stock.createMany({
+      data: catalogue.flatMap(v =>
+        v.stocks.map(s => ({ vetementId: idVetement.get(v.nom), taille: s.taille, quantite: s.quantite, ordre: s.ordre }))
+      ),
     });
 
-    await db.query(
-      `INSERT INTO commandes (id, utilisateur_id, nom_client, email, adresse, total, statut, cree_le)
-       OVERRIDING SYSTEM VALUE
-       SELECT * FROM unnest($1::int[], $2::int[], $3::text[], $4::text[], $5::text[], $6::numeric[], $7::text[], $8::timestamptz[])`,
-      [
-        entetes.map(e => e.id), entetes.map(e => e.utilisateur), entetes.map(e => e.nom), entetes.map(e => e.email),
-        entetes.map(e => e.adresse), entetes.map(e => e.total), entetes.map(e => e.statut), entetes.map(e => e.date),
-      ]
-    );
-    await db.query("SELECT setval(pg_get_serial_sequence('commandes', 'id'), (SELECT MAX(id) FROM commandes))");
+    const utilisateurs = await tx.utilisateur.createManyAndReturn({
+      data: clients.map(c => ({
+        email: c.email,
+        nom: c.nom,
+        motDePasseHash: hash,
+        role: 'client',
+        creeLe: new Date((c.premiere ?? maintenant - entier(1, JOURS) * JOUR) - entier(0, 30) * JOUR),
+      })),
+      select: { id: true, email: true },
+    });
+    const idClient = new Map(utilisateurs.map(u => [u.email, u.id]));
 
-    await db.query(
-      `INSERT INTO lignes_commande (commande_id, vetement_id, nom, taille, prix_unitaire, quantite)
-       SELECT * FROM unnest($1::int[], $2::int[], $3::text[], $4::text[], $5::numeric[], $6::int[])`,
-      [
-        lignesPlates.map(l => l.commande), lignesPlates.map(l => l.vetement), lignesPlates.map(l => l.nom),
-        lignesPlates.map(l => l.taille), lignesPlates.map(l => l.prix), lignesPlates.map(l => l.quantite),
-      ]
-    );
+    const creees = await tx.commande.createManyAndReturn({
+      data: commandes.map(c => {
+        const qui = c.client ?? c.invite;
+        const centimes = c.lignes.reduce((total, l) => total + enCentimes(l.vetement.prix) * l.quantite, 0);
+        return {
+          utilisateurId: c.client ? idClient.get(c.client.email) : null,
+          nomClient: qui.nom,
+          email: qui.email,
+          adresse: qui.adresse,
+          total: (centimes / 100).toFixed(2),
+          statut: c.statut,
+          creeLe: c.date,
+        };
+      }),
+      select: { id: true },
+    });
 
-    return { lignes: lignesPlates.length };
-  });
+    const lignes = commandes.flatMap((c, i) =>
+      c.lignes.map(l => ({
+        commandeId: creees[i].id,
+        vetementId: idVetement.get(l.vetement.nom),
+        nom: l.vetement.nom,
+        taille: l.taille,
+        prixUnitaire: l.vetement.prix,
+        quantite: l.quantite,
+      }))
+    );
+    await tx.ligneCommande.createMany({ data: lignes });
+
+    return { lignes: lignes.length };
+  }, { timeout: 120000 });
 
 const debut = Date.now();
 const emailsPris = new Set();
@@ -208,16 +197,15 @@ const commandes = genererCommandes(catalogue, clients, emailsPris);
 const hash = await bcrypt.hash(MOT_DE_PASSE_DEMO, 10);
 const { lignes } = await inserer(catalogue, clients, commandes, hash);
 
-const resume = await pool.query(`
-  SELECT
-    (SELECT COUNT(*) FROM vetements) AS vetements,
-    (SELECT COUNT(*) FROM utilisateurs WHERE role = 'client') AS clients,
-    (SELECT COUNT(*) FROM commandes) AS commandes,
-    (SELECT COUNT(*) FROM commandes WHERE statut = 'en_attente') AS en_attente,
-    (SELECT SUM(total) FROM commandes WHERE statut <> 'annulee') AS chiffre_affaires`);
-const r = resume.rows[0];
-console.log(`${r.vetements} vêtements, ${r.clients} clients, ${r.commandes} commandes (${lignes} lignes, ${r.en_attente} en attente)`);
-console.log(`Chiffre d'affaires : ${Number(r.chiffre_affaires).toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}`);
+const [nbVetements, nbClients, nbCommandes, enAttente, chiffre] = await Promise.all([
+  prisma.vetement.count(),
+  prisma.utilisateur.count({ where: { role: 'client' } }),
+  prisma.commande.count(),
+  prisma.commande.count({ where: { statut: 'en_attente' } }),
+  prisma.commande.aggregate({ where: { statut: { not: 'annulee' } }, _sum: { total: true } }),
+]);
+console.log(`${nbVetements} vêtements, ${nbClients} clients, ${nbCommandes} commandes (${lignes} lignes, ${enAttente} en attente)`);
+console.log(`Chiffre d'affaires : ${chiffre._sum.total.toNumber().toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}`);
 console.log(`Mot de passe de tous les clients de démo : ${MOT_DE_PASSE_DEMO} (ex. ${clients.at(0).email})`);
 console.log(`Terminé en ${((Date.now() - debut) / 1000).toFixed(1)} s`);
-await pool.end();
+await prisma.$disconnect();

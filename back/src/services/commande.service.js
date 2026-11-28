@@ -1,4 +1,4 @@
-import { transaction } from '../config/db.js';
+import prisma from '../config/prisma.js';
 import * as commandeRepository from '../repositories/commande.repository.js';
 import { ValidationError } from '../errors/ValidationError.js';
 import { NotFoundError } from '../errors/NotFoundError.js';
@@ -63,24 +63,25 @@ export const passerCommande = async (data, utilisateur) => {
   );
   const lignes = validerLignes(data?.lignes);
 
-  return transaction(async (db) => {
+  return prisma.$transaction(async (tx) => {
     const lignesCompletes = [];
     for (const ligne of lignes) {
-      const stock = await commandeRepository.verrouillerStock(db, ligne.vetementId, ligne.taille);
+      const stock = await commandeRepository.trouverStock(tx, ligne.vetementId, ligne.taille);
       if (!stock) {
         throw new ConflictError(`Un article de ton panier n'existe plus (taille ${ligne.taille})`);
       }
-      if (stock.stock < ligne.quantite) {
+      const retire = await commandeRepository.retirerDuStock(tx, ligne.vetementId, ligne.taille, ligne.quantite);
+      if (!retire) {
+        const restant = (await commandeRepository.trouverStock(tx, ligne.vetementId, ligne.taille))?.quantite ?? 0;
         throw new ConflictError(
-          stock.stock === 0
-            ? `« ${stock.nom} » en taille ${ligne.taille} est épuisé`
-            : `Il ne reste que ${stock.stock} « ${stock.nom} » en taille ${ligne.taille}`
+          restant === 0
+            ? `« ${stock.vetement.nom} » en taille ${ligne.taille} est épuisé`
+            : `Il ne reste que ${restant} « ${stock.vetement.nom} » en taille ${ligne.taille}`
         );
       }
-      await commandeRepository.retirerDuStock(db, ligne.vetementId, ligne.taille, ligne.quantite);
-      lignesCompletes.push({ ...ligne, nom: stock.nom, prix: stock.prix });
+      lignesCompletes.push({ ...ligne, nom: stock.vetement.nom, prix: stock.vetement.prix });
     }
-    return commandeRepository.create(db, client, lignesCompletes, utilisateur?.sub ?? null);
+    return commandeRepository.create(tx, client, lignesCompletes, utilisateur?.sub ?? null);
   });
 };
 
@@ -160,8 +161,8 @@ export const changerStatut = async (id, statut) => {
     throw new ValidationError(`Statut inconnu. Valeurs acceptées : ${Object.keys(TRANSITIONS).join(', ')}`);
   }
 
-  return transaction(async (db) => {
-    const commande = await commandeRepository.verrouillerCommande(db, id);
+  return prisma.$transaction(async (tx) => {
+    const commande = await commandeRepository.trouverStatut(tx, id);
     if (!commande) {
       throw new NotFoundError(`Aucune commande avec l'id ${id}`);
     }
@@ -170,10 +171,12 @@ export const changerStatut = async (id, statut) => {
         `Une commande ${LIBELLES[commande.statut]} ne peut pas passer à « ${LIBELLES[statut]} »`
       );
     }
-    if (statut === 'annulee') {
-      await commandeRepository.remettreEnStock(db, id);
+    if (!(await commandeRepository.changerStatut(tx, id, commande.statut, statut))) {
+      throw new ConflictError('La commande vient d\'être modifiée par quelqu\'un d\'autre, recharge la page');
     }
-    await commandeRepository.changerStatut(db, id, statut);
-    return commandeRepository.findById(id, db);
+    if (statut === 'annulee') {
+      await commandeRepository.remettreEnStock(tx, id);
+    }
+    return commandeRepository.findById(id, tx);
   });
 };

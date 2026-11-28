@@ -1,101 +1,99 @@
-import pool, { transaction } from '../config/db.js';
+import prisma from '../config/prisma.js';
 
-const SELECT_VETEMENTS = `
-  SELECT v.id, v.nom, v.prix::float AS prix, v.description, v.image, c.nom AS categorie,
-    COALESCE(
-      (SELECT json_agg(json_build_object('taille', s.taille, 'stock', s.quantite) ORDER BY s.ordre)
-       FROM stocks s WHERE s.vetement_id = v.id),
-      '[]'
-    ) AS tailles
-  FROM vetements v
-  JOIN categories c ON v.categorie_id = c.id`;
+const CHAMPS = {
+  id: true,
+  nom: true,
+  prix: true,
+  description: true,
+  image: true,
+  categorie: { select: { nom: true } },
+  stocks: { select: { taille: true, quantite: true }, orderBy: { ordre: 'asc' } },
+};
+
+const versVetement = ({ prix, categorie, stocks, ...vetement }) => ({
+  ...vetement,
+  prix: prix.toNumber(),
+  categorie: categorie.nom,
+  tailles: stocks.map(s => ({ taille: s.taille, stock: s.quantite })),
+});
 
 export const TRIS = {
-  recent: 'v.id DESC',
-  prix_asc: 'v.prix ASC, v.id DESC',
-  prix_desc: 'v.prix DESC, v.id DESC',
-  nom: 'v.nom ASC, v.id DESC',
+  recent: [{ id: 'desc' }],
+  prix_asc: [{ prix: 'asc' }, { id: 'desc' }],
+  prix_desc: [{ prix: 'desc' }, { id: 'desc' }],
+  nom: [{ nom: 'asc' }, { id: 'desc' }],
 };
 
 const filtrer = ({ categorie, recherche }) => {
-  const conditions = [];
-  const valeurs = [];
+  const where = {};
   if (categorie) {
-    valeurs.push(categorie);
-    conditions.push(`c.nom = $${valeurs.length}`);
+    where.categorie = { nom: categorie };
   }
   if (recherche) {
-    valeurs.push(`%${recherche}%`);
-    const n = valeurs.length;
-    conditions.push(`(v.nom ILIKE $${n} OR v.description ILIKE $${n})`);
+    where.OR = [
+      { nom: { contains: recherche, mode: 'insensitive' } },
+      { description: { contains: recherche, mode: 'insensitive' } },
+    ];
   }
-  return { where: conditions.length > 0 ? ` WHERE ${conditions.join(' AND ')}` : '', valeurs };
+  return where;
 };
+
+const versStocks = (tailles) => tailles.map((t, i) => ({ taille: t.taille, quantite: t.stock, ordre: i + 1 }));
 
 export const findAll = async ({ tri = 'recent', limite, decalage = 0, ...filtres } = {}) => {
-  const { where, valeurs } = filtrer(filtres);
-  let pagination = '';
-  if (limite) {
-    valeurs.push(limite, decalage);
-    pagination = ` LIMIT $${valeurs.length - 1} OFFSET $${valeurs.length}`;
-  }
-  const result = await pool.query(`${SELECT_VETEMENTS}${where} ORDER BY ${TRIS[tri]}${pagination}`, valeurs);
-  return result.rows;
+  const vetements = await prisma.vetement.findMany({
+    where: filtrer(filtres),
+    select: CHAMPS,
+    orderBy: TRIS[tri],
+    take: limite,
+    skip: limite ? decalage : undefined,
+  });
+  return vetements.map(versVetement);
 };
 
-export const compter = async (filtres = {}) => {
-  const { where, valeurs } = filtrer(filtres);
-  const result = await pool.query(
-    `SELECT COUNT(*)::int AS total FROM vetements v JOIN categories c ON v.categorie_id = c.id${where}`,
-    valeurs
-  );
-  return result.rows[0].total;
-};
+export const compter = (filtres = {}) => prisma.vetement.count({ where: filtrer(filtres) });
 
 export const findById = async (id) => {
-  const result = await pool.query(`${SELECT_VETEMENTS} WHERE v.id = $1`, [id]);
-  return result.rows[0];
+  const vetement = await prisma.vetement.findUnique({ where: { id }, select: CHAMPS });
+  return vetement ? versVetement(vetement) : undefined;
 };
 
-const enregistrerStocks = (db, vetementId, tailles) =>
-  db.query(
-    `INSERT INTO stocks (vetement_id, taille, quantite, ordre)
-     SELECT $1, t.taille, t.quantite, t.ordre
-     FROM unnest($2::text[], $3::int[]) WITH ORDINALITY AS t (taille, quantite, ordre)`,
-    [vetementId, tailles.map(t => t.taille), tailles.map(t => t.stock)]
-  );
-
-export const create = (vetement) =>
-  transaction(async (db) => {
-    const { nom, prix, description, image, tailles, categorie } = vetement;
-    const result = await db.query(
-      `INSERT INTO vetements (nom, prix, description, image, categorie_id)
-       VALUES ($1, $2, $3, $4, (SELECT id FROM categories WHERE nom = $5)) RETURNING id`,
-      [nom, prix, description, image, categorie]
-    );
-    const id = result.rows[0].id;
-    await enregistrerStocks(db, id, tailles);
-    return id;
+export const create = async ({ nom, prix, description, image, tailles, categorie }) => {
+  const vetement = await prisma.vetement.create({
+    data: {
+      nom,
+      prix,
+      description,
+      image,
+      categorie: { connect: { nom: categorie } },
+      stocks: { create: versStocks(tailles) },
+    },
+    select: { id: true },
   });
+  return vetement.id;
+};
 
-export const update = (id, vetement) =>
-  transaction(async (db) => {
-    const { nom, prix, description, image, tailles, categorie } = vetement;
-    const result = await db.query(
-      `UPDATE vetements SET nom = $1, prix = $2, description = $3, image = $4,
-         categorie_id = (SELECT id FROM categories WHERE nom = $5)
-       WHERE id = $6`,
-      [nom, prix, description, image, categorie, id]
-    );
-    if (result.rowCount === 0) {
+export const update = (id, { nom, prix, description, image, tailles, categorie }) =>
+  prisma.$transaction(async (tx) => {
+    const existe = await tx.vetement.findUnique({ where: { id }, select: { id: true } });
+    if (!existe) {
       return 0;
     }
-    await db.query('DELETE FROM stocks WHERE vetement_id = $1', [id]);
-    await enregistrerStocks(db, id, tailles);
-    return result.rowCount;
+    await tx.vetement.update({
+      where: { id },
+      data: {
+        nom,
+        prix,
+        description,
+        image,
+        categorie: { connect: { nom: categorie } },
+        stocks: { deleteMany: {}, create: versStocks(tailles) },
+      },
+    });
+    return 1;
   });
 
 export const remove = async (id) => {
-  const result = await pool.query('DELETE FROM vetements WHERE id = $1', [id]);
-  return result.rowCount;
+  const { count } = await prisma.vetement.deleteMany({ where: { id } });
+  return count;
 };

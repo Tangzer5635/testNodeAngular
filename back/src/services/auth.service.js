@@ -21,7 +21,7 @@ export const connexion = async (email, motDePasse) => {
     throw new ValidationError('Email et mot de passe sont requis');
   }
   const utilisateur = await utilisateurRepository.findByEmail(normaliserEmail(email));
-  const motDePasseValide = utilisateur && (await bcrypt.compare(motDePasse, utilisateur.mot_de_passe_hash));
+  const motDePasseValide = utilisateur && (await bcrypt.compare(motDePasse, utilisateur.motDePasseHash));
   if (!motDePasseValide) {
     throw new UnauthorizedError('Email ou mot de passe incorrect');
   }

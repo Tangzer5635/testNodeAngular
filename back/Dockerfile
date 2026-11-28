@@ -1,10 +1,13 @@
 FROM node:24-alpine
 
+RUN apk add --no-cache openssl
+
 WORKDIR /app
 ENV NODE_ENV=production
 
-COPY package*.json ./
-RUN npm ci --omit=dev
+COPY package*.json prisma.config.js ./
+COPY prisma ./prisma
+RUN npm ci --include=dev && npm prune --omit=dev
 
 COPY . .
 

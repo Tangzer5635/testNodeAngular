@@ -1,6 +1,6 @@
-import pool from '../config/db.js';
+import prisma from '../config/prisma.js';
 
 export const findAll = async () => {
-    const result = await pool.query('SELECT nom FROM categories ORDER BY nom');
-    return result.rows.map(row => row.nom);
+  const categories = await prisma.categorie.findMany({ select: { nom: true }, orderBy: { nom: 'asc' } });
+  return categories.map(c => c.nom);
 };

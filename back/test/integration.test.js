@@ -3,12 +3,13 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import bcrypt from 'bcryptjs';
+import pg from 'pg';
 
 process.env.JWT_SECRET ??= 'secret-de-test';
 const actif = process.env.DB_NAME?.endsWith('_test') ?? false;
 
 const { default: app } = await import('../src/app.js');
-const { default: pool } = await import('../src/config/db.js');
+const { default: prisma } = await import('../src/config/prisma.js');
 const { DOSSIER_UPLOADS } = await import('../src/middlewares/upload.js');
 
 const PNG = Buffer.from(
@@ -77,12 +78,20 @@ describe('API avec une vraie base de données', { skip: actif ? false : 'base de
   before(async () => {
     await fs.mkdir(DOSSIER_UPLOADS, { recursive: true });
     fichiersAvant = new Set(await fs.readdir(DOSSIER_UPLOADS));
-    await pool.query('DROP SCHEMA public CASCADE; CREATE SCHEMA public;');
-    await pool.query(await fs.readFile(new URL('../../db/init.sql', import.meta.url), 'utf8'));
-    await pool.query(
-      `INSERT INTO utilisateurs (email, nom, mot_de_passe_hash, role) VALUES ('admin@test.fr', 'Admin', $1, 'admin')`,
-      [await bcrypt.hash('Admin123!', 4)]
-    );
+    const base = new pg.Client({
+      user: process.env.DB_USER,
+      host: process.env.DB_HOST,
+      database: process.env.DB_NAME,
+      password: process.env.DB_PASSWORD,
+      port: Number(process.env.DB_PORT),
+    });
+    await base.connect();
+    await base.query('DROP SCHEMA public CASCADE; CREATE SCHEMA public;');
+    await base.query(await fs.readFile(new URL('../../db/init.sql', import.meta.url), 'utf8'));
+    await base.end();
+    await prisma.utilisateur.create({
+      data: { email: 'admin@test.fr', nom: 'Admin', motDePasseHash: await bcrypt.hash('Admin123!', 4), role: 'admin' },
+    });
     serveur = app.listen(0);
     url = `http://localhost:${serveur.address().port}`;
     const { body } = await appeler('POST', '/api/auth/login', { corps: { email: 'admin@test.fr', motDePasse: 'Admin123!' } });
@@ -97,7 +106,7 @@ describe('API avec une vraie base de données', { skip: actif ? false : 'base de
     }
     serveur.closeAllConnections();
     serveur.close();
-    await pool.end();
+    await prisma.$disconnect();
   });
 
   describe('Catalogue', () => {
@@ -186,9 +195,9 @@ describe('API avec une vraie base de données', { skip: actif ? false : 'base de
     });
 
     test('le mot de passe est stocké haché, jamais en clair', async () => {
-      const { rows } = await pool.query("SELECT mot_de_passe_hash FROM utilisateurs WHERE email = 'hugo@test.fr'");
-      assert.notEqual(rows[0].mot_de_passe_hash, 'motdepasse1');
-      assert.match(rows[0].mot_de_passe_hash, /^\$2[aby]\$/);
+      const { motDePasseHash } = await prisma.utilisateur.findUnique({ where: { email: 'hugo@test.fr' } });
+      assert.notEqual(motDePasseHash, 'motdepasse1');
+      assert.match(motDePasseHash, /^\$2[aby]\$/);
     });
 
     test('impossible de créer deux comptes avec le même email (409)', async () => {
@@ -490,7 +499,7 @@ describe('API avec une vraie base de données', { skip: actif ? false : 'base de
     });
 
     test('filtre par période', async () => {
-      await pool.query("UPDATE commandes SET cree_le = '2025-12-24 10:00+00' WHERE id = 1");
+      await prisma.commande.update({ where: { id: 1 }, data: { creeLe: new Date('2025-12-24T10:00:00Z') } });
       const noel = await appeler('GET', '/api/commandes?du=2025-12-24&au=2025-12-24', { jeton: jetonAdmin });
       assert.deepEqual(noel.body.map(c => c.id), [1]);
       const apres = await appeler('GET', '/api/commandes?du=2025-12-25', { jeton: jetonAdmin });

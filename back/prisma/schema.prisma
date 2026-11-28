@@ -1,0 +1,87 @@
+generator client {
+  provider            = "prisma-client"
+  output              = "../src/generated/prisma"
+  moduleFormat        = "esm"
+  importFileExtension = "ts"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Categorie {
+  id        Int        @id @default(autoincrement())
+  nom       String     @unique
+  vetements Vetement[]
+
+  @@map("categories")
+}
+
+model Vetement {
+  id          Int             @id @default(autoincrement())
+  nom         String
+  description String?
+  prix        Decimal         @db.Decimal(10, 2)
+  image       String?
+  categorieId Int             @map("categorie_id")
+  categorie   Categorie       @relation(fields: [categorieId], references: [id])
+  stocks      Stock[]
+  lignes      LigneCommande[]
+
+  @@map("vetements")
+}
+
+model Stock {
+  vetementId Int      @map("vetement_id")
+  taille     String
+  quantite   Int      @default(0)
+  ordre      Int      @default(0)
+  vetement   Vetement @relation(fields: [vetementId], references: [id], onDelete: Cascade)
+
+  @@id([vetementId, taille])
+  @@map("stocks")
+}
+
+model Utilisateur {
+  id              Int        @id @default(autoincrement())
+  email           String     @unique
+  nom             String?
+  motDePasseHash  String     @map("mot_de_passe_hash")
+  role            String     @default("client")
+  creeLe          DateTime   @default(now()) @map("cree_le") @db.Timestamptz
+  commandes       Commande[]
+
+  @@map("utilisateurs")
+}
+
+model Commande {
+  id            Int             @id @default(autoincrement())
+  utilisateurId Int?            @map("utilisateur_id")
+  utilisateur   Utilisateur?    @relation(fields: [utilisateurId], references: [id], onDelete: SetNull)
+  nomClient     String          @map("nom_client")
+  email         String
+  adresse       String
+  total         Decimal         @default(0) @db.Decimal(10, 2)
+  statut        String          @default("en_attente")
+  creeLe        DateTime        @default(now()) @map("cree_le") @db.Timestamptz
+  lignes        LigneCommande[]
+
+  @@index([statut], map: "commandes_statut_idx")
+  @@index([utilisateurId], map: "commandes_utilisateur_idx")
+  @@map("commandes")
+}
+
+model LigneCommande {
+  id           Int       @id @default(autoincrement())
+  commandeId   Int       @map("commande_id")
+  commande     Commande  @relation(fields: [commandeId], references: [id], onDelete: Cascade)
+  vetementId   Int?      @map("vetement_id")
+  vetement     Vetement? @relation(fields: [vetementId], references: [id], onDelete: SetNull)
+  nom          String
+  taille       String
+  prixUnitaire Decimal   @map("prix_unitaire") @db.Decimal(10, 2)
+  quantite     Int
+
+  @@index([commandeId], map: "lignes_commande_commande_idx")
+  @@map("lignes_commande")
+}

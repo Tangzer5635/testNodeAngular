@@ -1,155 +1,133 @@
-import pool from '../config/db.js';
+import prisma from '../config/prisma.js';
+import { Prisma } from '../generated/prisma/client.ts';
 
-const SELECT_COMMANDES = `
-  SELECT c.id, c.utilisateur_id AS "utilisateurId", c.nom_client AS "nomClient", c.email, c.adresse, c.total::float AS total, c.statut,
-    c.cree_le AS "creeLe",
-    COALESCE(
-      json_agg(json_build_object(
-        'vetementId', l.vetement_id, 'nom', l.nom, 'taille', l.taille,
-        'prixUnitaire', l.prix_unitaire::float, 'quantite', l.quantite
-      ) ORDER BY l.id) FILTER (WHERE l.id IS NOT NULL),
-      '[]'
-    ) AS lignes
-  FROM commandes c
-  LEFT JOIN lignes_commande l ON l.commande_id = c.id`;
-
-export const TRIS = {
-  recent: 'c.id DESC',
-  ancien: 'c.id ASC',
-  montant_desc: 'c.total DESC, c.id DESC',
-  montant_asc: 'c.total ASC, c.id DESC',
+const CHAMPS = {
+  id: true,
+  utilisateurId: true,
+  nomClient: true,
+  email: true,
+  adresse: true,
+  total: true,
+  statut: true,
+  creeLe: true,
+  lignes: {
+    select: { vetementId: true, nom: true, taille: true, prixUnitaire: true, quantite: true },
+    orderBy: { id: 'asc' },
+  },
 };
 
+const versCommande = ({ total, lignes, ...commande }) => ({
+  ...commande,
+  total: total.toNumber(),
+  lignes: lignes.map(l => ({ ...l, prixUnitaire: l.prixUnitaire.toNumber() })),
+});
+
+export const TRIS = {
+  recent: [{ id: 'desc' }],
+  ancien: [{ id: 'asc' }],
+  montant_desc: [{ total: 'desc' }, { id: 'desc' }],
+  montant_asc: [{ total: 'asc' }, { id: 'desc' }],
+};
+
+const JOUR = 24 * 60 * 60 * 1000;
+
 const filtrer = ({ statut, utilisateurId, recherche, du, au }) => {
-  const conditions = [];
-  const valeurs = [];
-  const ajouter = (valeur) => {
-    valeurs.push(valeur);
-    return `$${valeurs.length}`;
-  };
-  if (statut) {
-    conditions.push(`c.statut = ${ajouter(statut)}`);
-  }
-  if (utilisateurId) {
-    conditions.push(`c.utilisateur_id = ${ajouter(utilisateurId)}`);
-  }
+  const where = { statut, utilisateurId };
   if (recherche) {
-    const texte = ajouter(`%${recherche}%`);
-    const criteres = [
-      `c.nom_client ILIKE ${texte}`,
-      `c.email ILIKE ${texte}`,
-      `EXISTS (SELECT 1 FROM lignes_commande lr WHERE lr.commande_id = c.id AND lr.nom ILIKE ${texte})`,
-    ];
+    const texte = { contains: recherche, mode: 'insensitive' };
+    where.OR = [{ nomClient: texte }, { email: texte }, { lignes: { some: { nom: texte } } }];
     const numero = recherche.match(/^(?:n°|#)?\s*(\d{1,9})$/i);
     if (numero) {
-      criteres.push(`c.id = ${ajouter(Number(numero[1]))}`);
+      where.OR.push({ id: Number(numero[1]) });
     }
-    conditions.push(`(${criteres.join(' OR ')})`);
   }
-  if (du) {
-    conditions.push(`c.cree_le >= ${ajouter(du)}::date`);
+  if (du || au) {
+    where.creeLe = {
+      gte: du ? new Date(du) : undefined,
+      lt: au ? new Date(new Date(au).getTime() + JOUR) : undefined,
+    };
   }
-  if (au) {
-    conditions.push(`c.cree_le < ${ajouter(au)}::date + 1`);
-  }
-  return { where: conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '', valeurs };
+  return where;
 };
 
 export const findAll = async ({ limite, decalage = 0, tri = 'recent', ...filtres } = {}) => {
-  const { where, valeurs } = filtrer(filtres);
-  let pagination = '';
-  if (limite) {
-    valeurs.push(limite, decalage);
-    pagination = `LIMIT $${valeurs.length - 1} OFFSET $${valeurs.length}`;
-  }
-  const result = await pool.query(
-    `${SELECT_COMMANDES} ${where} GROUP BY c.id ORDER BY ${TRIS[tri]} ${pagination}`,
-    valeurs
-  );
-  return result.rows;
+  const commandes = await prisma.commande.findMany({
+    where: filtrer(filtres),
+    select: CHAMPS,
+    orderBy: TRIS[tri],
+    take: limite,
+    skip: limite ? decalage : undefined,
+  });
+  return commandes.map(versCommande);
 };
 
-export const compter = async (filtres = {}) => {
-  const { where, valeurs } = filtrer(filtres);
-  const result = await pool.query(`SELECT COUNT(*)::int AS total FROM commandes c ${where}`, valeurs);
-  return result.rows[0].total;
-};
+export const compter = (filtres = {}) => prisma.commande.count({ where: filtrer(filtres) });
 
 export const compterParStatut = async ({ statut, ...filtres } = {}) => {
-  const { where, valeurs } = filtrer(filtres);
-  const result = await pool.query(
-    `SELECT c.statut, COUNT(*)::int AS nombre FROM commandes c ${where} GROUP BY c.statut`,
-    valeurs
-  );
-  return result.rows;
+  const groupes = await prisma.commande.groupBy({
+    by: ['statut'],
+    where: filtrer(filtres),
+    _count: { _all: true },
+  });
+  return groupes.map(g => ({ statut: g.statut, nombre: g._count._all }));
 };
 
-export const findById = async (id, db = pool) => {
-  const result = await db.query(`${SELECT_COMMANDES} WHERE c.id = $1 GROUP BY c.id`, [id]);
-  return result.rows[0];
+export const findById = async (id, db = prisma) => {
+  const commande = await db.commande.findUnique({ where: { id }, select: CHAMPS });
+  return commande ? versCommande(commande) : undefined;
 };
 
-export const verrouillerStock = async (db, vetementId, taille) => {
-  const result = await db.query(
-    `SELECT v.nom, v.prix, s.quantite AS stock
-     FROM stocks s JOIN vetements v ON v.id = s.vetement_id
-     WHERE s.vetement_id = $1 AND s.taille = $2
-     FOR UPDATE OF s`,
-    [vetementId, taille]
-  );
-  return result.rows[0];
-};
+export const trouverStock = (db, vetementId, taille) =>
+  db.stock.findUnique({
+    where: { vetementId_taille: { vetementId, taille } },
+    select: { quantite: true, vetement: { select: { nom: true, prix: true } } },
+  });
 
-export const retirerDuStock = (db, vetementId, taille, quantite) =>
-  db.query(
-    'UPDATE stocks SET quantite = quantite - $3 WHERE vetement_id = $1 AND taille = $2',
-    [vetementId, taille, quantite]
-  );
+export const retirerDuStock = async (db, vetementId, taille, quantite) => {
+  const { count } = await db.stock.updateMany({
+    where: { vetementId, taille, quantite: { gte: quantite } },
+    data: { quantite: { decrement: quantite } },
+  });
+  return count === 1;
+};
 
 export const create = async (db, client, lignes, utilisateurId) => {
-  const commande = await db.query(
-    'INSERT INTO commandes (utilisateur_id, nom_client, email, adresse) VALUES ($1, $2, $3, $4) RETURNING id',
-    [utilisateurId, client.nom, client.email, client.adresse]
-  );
-  const id = commande.rows[0].id;
-
-  await db.query(
-    `INSERT INTO lignes_commande (commande_id, vetement_id, nom, taille, prix_unitaire, quantite)
-     SELECT $1, l.vetement_id, l.nom, l.taille, l.prix, l.quantite
-     FROM unnest($2::int[], $3::text[], $4::text[], $5::numeric[], $6::int[])
-       AS l (vetement_id, nom, taille, prix, quantite)`,
-    [
-      id,
-      lignes.map(l => l.vetementId),
-      lignes.map(l => l.nom),
-      lignes.map(l => l.taille),
-      lignes.map(l => l.prix),
-      lignes.map(l => l.quantite),
-    ]
-  );
-
-  const total = await db.query(
-    `UPDATE commandes
-     SET total = (SELECT SUM(prix_unitaire * quantite) FROM lignes_commande WHERE commande_id = $1)
-     WHERE id = $1
-     RETURNING total::float AS total`,
-    [id]
-  );
-  return { id, total: total.rows[0].total };
+  const total = lignes.reduce((somme, l) => somme.plus(l.prix.times(l.quantite)), new Prisma.Decimal(0));
+  const commande = await db.commande.create({
+    data: {
+      utilisateurId,
+      nomClient: client.nom,
+      email: client.email,
+      adresse: client.adresse,
+      total,
+      lignes: {
+        create: lignes.map(l => ({
+          vetementId: l.vetementId,
+          nom: l.nom,
+          taille: l.taille,
+          prixUnitaire: l.prix,
+          quantite: l.quantite,
+        })),
+      },
+    },
+    select: { id: true, total: true },
+  });
+  return { id: commande.id, total: commande.total.toNumber() };
 };
 
-export const verrouillerCommande = async (db, id) => {
-  const result = await db.query('SELECT statut FROM commandes WHERE id = $1 FOR UPDATE', [id]);
-  return result.rows[0];
+export const trouverStatut = (db, id) => db.commande.findUnique({ where: { id }, select: { statut: true } });
+
+export const changerStatut = async (db, id, ancien, nouveau) => {
+  const { count } = await db.commande.updateMany({ where: { id, statut: ancien }, data: { statut: nouveau } });
+  return count === 1;
 };
 
-export const remettreEnStock = (db, commandeId) =>
-  db.query(
-    `UPDATE stocks s SET quantite = s.quantite + l.quantite
-     FROM lignes_commande l
-     WHERE l.commande_id = $1 AND s.vetement_id = l.vetement_id AND s.taille = l.taille`,
-    [commandeId]
-  );
-
-export const changerStatut = (db, id, statut) =>
-  db.query('UPDATE commandes SET statut = $2 WHERE id = $1', [id, statut]);
+export const remettreEnStock = async (db, commandeId) => {
+  const lignes = await db.ligneCommande.findMany({
+    where: { commandeId, vetementId: { not: null } },
+    select: { vetementId: true, taille: true, quantite: true },
+  });
+  for (const { vetementId, taille, quantite } of lignes) {
+    await db.stock.updateMany({ where: { vetementId, taille }, data: { quantite: { increment: quantite } } });
+  }
+};
